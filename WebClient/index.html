@@ -1,0 +1,47 @@
+<html>
+<head>
+    <meta charset='utf-8'>
+    <title>Form</title>
+    <script type='text/javascript'>
+	
+        function sayHello() {
+		
+			var userName = document.getElementById("user_name").value;
+			if (userName.length <= 0) {
+				alert("please input a valid name");
+				return;
+			}
+			
+			var url = "http://192.168.0.50:9992/example/hello";
+			var method = "POST";
+			var postData = userName;
+
+			var async = true;
+			var request = new XMLHttpRequest();
+
+			request.onload = function () {
+			   var status = request.status; // HTTP response status, e.g., 200 for "200 OK"
+			   var data = request.responseText; // Returned data, e.g., an HTML document.
+			   document.getElementById("textarea").value += data + "\n";
+			}
+
+			request.open(method, url, async);
+			request.setRequestHeader("Content-Type", "text/plain;charset=UTF-8");
+			request.send(postData);
+        }
+        
+    </script>
+
+</head>
+
+<body>
+    <form id='form' method = 'post'>
+        <p>
+		Your Name: <input type="text" id="user_name"/> &nbsp;&nbsp;
+        <input id ="submit" type = "button" onclick="sayHello()" value='Say Hello'/>
+		</p>
+    </form>
+	<p><textarea style="width:800px; height:400px;" id="textarea"></textarea></p>
+</body>
+
+</html>
