@@ -42,11 +42,12 @@ namespace MySharpServer.Framework
         public ICacheManager<object> OpenCache(string cacheName)
         {
             var mgrs = m_Mgrs; // thread-safe (reads and writes of reference types are atomic)
-            if (mgrs != null && mgrs.ContainsKey(cacheName))
+            ICacheManager<object> cache = null;
+            if (mgrs != null && mgrs.Count > 0)
             {
-                return mgrs[cacheName];
+                if (!mgrs.TryGetValue(cacheName, out cache)) cache = null;
             }
-            return null;
+            return cache;
         }
     }
 }

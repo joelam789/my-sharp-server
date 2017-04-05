@@ -10,7 +10,7 @@ using MySharpServer.Common;
 
 namespace MySharpServer.Framework
 {
-    public class DataHelper: IDataHelper
+    public class DataAccessHelper: IDataAccessHelper
     {
         public static readonly string CNN_STRING_SECTION = "connectionStrings";
 
@@ -18,7 +18,7 @@ namespace MySharpServer.Framework
 
         private CacheProvider m_CacheProvider = null;
 
-        public DataHelper()
+        public DataAccessHelper()
         {
             // Get the application configuration file.
             var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);

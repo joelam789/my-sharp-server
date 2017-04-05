@@ -8,7 +8,7 @@ using CacheManager.Core;
 
 namespace MySharpServer.Common
 {
-    public interface IDataHelper
+    public interface IDataAccessHelper
     {
         IDbConnection OpenDatabase(string cnnStrName);
         IDataParameter AddParam(IDbCommand cmd, string paramName, object paramValue);

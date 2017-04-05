@@ -23,7 +23,7 @@ namespace MySharpServerExample.ServerService
             string lastAccessTime = "";
             string currentTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
-            var cache = ctx.Helper.OpenCache("cache");
+            var cache = ctx.DataHelper.OpenCache("cache");
             if (cache != null)
             {
                 var value = cache.Get(userName);

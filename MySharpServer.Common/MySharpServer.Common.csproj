@@ -47,7 +47,7 @@
     <Compile Include="AccessAttribute.cs" />
     <Compile Include="CommonRng.cs" />
     <Compile Include="ConsoleLogger.cs" />
-    <Compile Include="IDataHelper.cs" />
+    <Compile Include="IDataAccessHelper.cs" />
     <Compile Include="IJsonCodec.cs" />
     <Compile Include="IServerNode.cs" />
     <Compile Include="IServerLogger.cs" />

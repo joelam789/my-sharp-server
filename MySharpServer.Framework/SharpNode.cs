@@ -34,7 +34,7 @@ namespace MySharpServer.Framework
 
         private IServerLogger m_Logger = null;
 
-        private IDataHelper m_DataHelper = new DataHelper();
+        private IDataAccessHelper m_DataHelper = new DataAccessHelper();
 
         private IJsonCodec m_JsonCodec = new NewtonJsonCodec();
 
@@ -378,9 +378,10 @@ namespace MySharpServer.Framework
 
         public void AddLocalServiceFilepath(string filepath)
         {
-            if (!File.Exists(filepath)) return;
-            if (m_LocalServiceFiles.ContainsKey(filepath)) return;
-            m_LocalServiceFiles.Add(filepath, DateTime.MinValue);
+            var svcfile = String.IsNullOrEmpty(filepath) ? "" : filepath.Trim();
+            if (svcfile.Length <= 0 || !File.Exists(svcfile)) return;
+            if (m_LocalServiceFiles.ContainsKey(svcfile)) return;
+            m_LocalServiceFiles.Add(svcfile, DateTime.MinValue);
         }
 
         private void UpdateLocalServices(object param)
@@ -501,16 +502,17 @@ namespace MySharpServer.Framework
             if (request.PathParts.Count < 2) request.Session.CloseConnection();
             else
             {
-                request.Helper = m_DataHelper;
+                request.DataHelper = m_DataHelper;
                 request.JsonCodec = m_JsonCodec;
                 request.LocalLogger = m_Logger;
-                request.LocalServer = m_ServerName;
+                request.LocalServer = m_ServerName + (String.IsNullOrEmpty(m_ServerGroupName) ? "" : ("@" + m_ServerGroupName));
                 request.LocalServices = m_LocalServices;
                 request.RemoteServices = m_RemoteServices;
                 if (request.IsFromPublic())
                 {
-                    request.EntryServer = m_ServerName;
-                    request.ClientAddress = request.Session.GetRemoteAddress();
+                    var group = request.Session.GetGroup();
+                    request.EntryServer = request.LocalServer;
+                    request.ClientAddress = request.Session.GetRemoteAddress() + (String.IsNullOrEmpty(group) ? "" : ("@" + group));
                     HandlePublicRequest(request);
                 }
                 else HandleInternalRequest(request);
@@ -555,8 +557,8 @@ namespace MySharpServer.Framework
                         string remoteUrl = remoteInfoParts[1]; // name | url | key
                         try
                         {
-                            result = RemoteCaller
-                                .Call(remoteUrl, serviceName, actionName, request.EntryServer + "/" + request.ClientAddress + "/" + request.Data);
+                            result = RemoteCaller.Call(remoteUrl, serviceName, actionName, 
+                                                        request.EntryServer + "/" + request.ClientAddress + "/" + request.Data);
                         }
                         catch (Exception ex)
                         {

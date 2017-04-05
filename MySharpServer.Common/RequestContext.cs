@@ -11,7 +11,7 @@ namespace MySharpServer.Common
 
         public IWebSession Session { get; private set; }
 
-        public IDataHelper Helper { get; set; }
+        public IDataAccessHelper DataHelper { get; set; }
 
         public IJsonCodec JsonCodec { get; set; }
 
@@ -32,7 +32,7 @@ namespace MySharpServer.Common
         public RequestContext()
         {
             Session = null;
-            Helper = null;
+            DataHelper = null;
 
             JsonCodec = null;
 
@@ -178,33 +178,33 @@ namespace MySharpServer.Common
             RemoteServices = remoteServices;
         }
 
-        public RequestContext(IDataHelper helper, Object data)
+        public RequestContext(IDataAccessHelper helper, Object data)
             : this()
         {
-            Helper = helper;
+            DataHelper = helper;
             Data = data;
         }
 
-        public RequestContext(IDataHelper helper, ServiceCollection localServices, Object data)
+        public RequestContext(IDataAccessHelper helper, ServiceCollection localServices, Object data)
             : this()
         {
-            Helper = helper;
+            DataHelper = helper;
             Data = data;
             LocalServices = localServices;
         }
 
-        public RequestContext(IDataHelper helper, Dictionary<string, List<string>> remoteServices, Object data)
+        public RequestContext(IDataAccessHelper helper, Dictionary<string, List<string>> remoteServices, Object data)
             : this()
         {
-            Helper = helper;
+            DataHelper = helper;
             Data = data;
             RemoteServices = remoteServices;
         }
 
-        public RequestContext(IDataHelper helper, ServiceCollection localServices, Dictionary<string, List<string>> remoteServices, Object data)
+        public RequestContext(IDataAccessHelper helper, ServiceCollection localServices, Dictionary<string, List<string>> remoteServices, Object data)
             : this()
         {
-            Helper = helper;
+            DataHelper = helper;
             Data = data;
             LocalServices = localServices;
             RemoteServices = remoteServices;
