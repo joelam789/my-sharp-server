@@ -16,7 +16,7 @@ namespace MySharpServer.Framework
     {
         protected string m_Ip = "0.0.0.0"; // any ip
         protected string m_Protocol = "http";
-        protected int m_Port = 9210;
+        protected int m_Port = 9991;
         protected int m_Flags = 0;
         protected HttpListener m_Server = null;
         protected Thread m_ListenerThread = null;
@@ -57,6 +57,7 @@ namespace MySharpServer.Framework
                 {
                     m_Server = new HttpListener();
 
+                    // if need ssl then just do NOT let "certFile" be empty, may set it with "https"
                     if (certFile.Length > 0) m_Protocol = "https";
                     else m_Protocol = "http";
 
@@ -80,9 +81,8 @@ namespace MySharpServer.Framework
                         //if (!store.Certificates.Contains(cert)) store.Add(cert);
                         //store.Close();
 
-                        // ref - http://stackoverflow.com/questions/21629395/http-listener-with-https-support-coded-in-c-sharp
-                        //     - http://stackoverflow.com/questions/11403333/httplistener-with-https-support
-                        //     - https://github.com/segor/SslCertBinding.Net
+                        // ref - http://stackoverflow.com/questions/11403333/httplistener-with-https-support
+                        //     - http://stackoverflow.com/questions/21629395/http-listener-with-https-support-coded-in-c-sharp
                     }
 
                     m_Server.Start();
@@ -239,22 +239,22 @@ namespace MySharpServer.Framework
 
         public int GetClientCount()
         {
-            return 0;
+            return 0; // not supported
         }
 
         public void GroupClient(string client, string group)
         {
-            return; // http do not support grouping
+            return; // not supported grouping by http/https
         }
 
         public void BroadcastToGroup(string msg, string group)
         {
-            return; // http do not support broadcasting
+            return; // not supported broadcasting by http/https
         }
 
         public void Broadcast(string msg, List<string> clients = null)
         {
-            return; // http do not support broadcasting
+            return; // not supported broadcasting by http/https
         }
     }
 }

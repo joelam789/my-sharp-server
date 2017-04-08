@@ -66,7 +66,7 @@ namespace MySharpServer.Framework
         public TaskFactory GetTaskFactory(object param)
         {
             var result = Call("get-task-factory", param, false, Task.Factory);
-            if (result != null && result is TaskFactory) return result as TaskFactory;
+            if (result != null) return result as TaskFactory;
             return null;
         }
 

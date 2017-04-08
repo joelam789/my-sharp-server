@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 
 using MySharpServer.Common;
 
-
 namespace MySharpServer.Framework
 {
     public class SharpNode: IServerNode
@@ -47,9 +46,9 @@ namespace MySharpServer.Framework
         private bool m_IsUploadingLocalServerInfo = false;
         private bool m_IsUpdatingRemoteServices = false;
 
-        private Timer m_UpdateLocalServicesTimer = null; // check dll file and load it if it's newer
-        private Timer m_UploadLocalServerInfoTimer = null; // including all services, internal and public access urls
-        private Timer m_UpdateRemoteServicesTimer = null; // auto get all services and internal access urls
+        private Timer m_UpdateLocalServicesTimer = null;   // check dll file and load it if it's newer
+        private Timer m_UploadLocalServerInfoTimer = null; // upload all local services, internal access url and public access url
+        private Timer m_UpdateRemoteServicesTimer = null;  // auto get all services and internal access urls of all online servers
 
         private IWebServer m_InternalServer = null;
         private IWebServer m_PublicServer = null;
@@ -122,7 +121,7 @@ namespace MySharpServer.Framework
                 m_UpdateRemoteServicesTimer = new Timer(UpdateRemoteServices, m_RemoteServices, 800, 1000 * 2);
             }
 
-            for (int i = 0; i < 20; i++) // try to wait for loading local services done (max waiting time is 1000ms)
+            for (int i = 0; i < 20; i++) // try to wait till loading local services is done (max waiting time is 1000ms)
             {
                 var svclist = m_LocalServices;
                 if (svclist == null || svclist.InternalServices == null || svclist.PublicServices == null
@@ -235,7 +234,7 @@ namespace MySharpServer.Framework
             else m_IsUploadingLocalServerInfo = true;
             try
             {
-                if (m_DataHelper == null) return;
+                if (m_DataHelper == null || !IsWorking()) return; // upload nothing if local server is not working
                 using (var cnn = m_DataHelper.OpenDatabase(m_ServerInfoStorage))
                 {
                     if (cnn == null) return;

@@ -23,7 +23,7 @@ namespace MySharpServer.Common
         {
             ServerIp = "0.0.0.0";
             ServerProtocol = "http";
-            ServerPort = 9210;
+            ServerPort = 9991;
 
             AllowOrigin = "";
 

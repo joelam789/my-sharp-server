@@ -18,7 +18,7 @@ namespace MySharpServer.Framework
 
         protected string m_Ip = "0.0.0.0"; // any ip
         protected string m_Protocol = "ws";
-        protected int m_Port = 9310;
+        protected int m_Port = 9992;
 
         protected int m_ClientCount = 0;
 

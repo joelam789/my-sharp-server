@@ -37,9 +37,9 @@ namespace MySharpServer.Framework
         {
             if (m_Protocol.Length <= 0)
             {
-                if (m_Session != null)
+                if (m_Session != null && m_Session.Request != null && m_Session.Request.InputStream != null)
                 {
-                    if (m_Session.Response.OutputStream is SslStream) m_Protocol = "https";
+                    if (m_Session.Request.InputStream is SslStream) m_Protocol = "https";
                     else m_Protocol = "http";
                 }
             }
@@ -50,7 +50,7 @@ namespace MySharpServer.Framework
         {
             if (m_RemoteAddress.Length <= 0)
             {
-                if (m_Session != null)
+                if (m_Session != null && m_Session.Request != null)
                 {
                     var remoteEndPoint = m_Session.Request.RemoteEndPoint;
                     m_RemoteAddress = remoteEndPoint.Address.ToString() + ":" + remoteEndPoint.Port;
