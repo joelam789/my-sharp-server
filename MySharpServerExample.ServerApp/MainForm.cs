@@ -17,7 +17,7 @@ namespace MySharpServerExample.ServerApp
 {
     public partial class MainForm : Form
     {
-        SharpNode m_ServerNode = null;
+        ServerNode m_ServerNode = null;
 
         ServerSetting m_InternalSetting = null;
         ServerSetting m_PublicSetting = null;
@@ -59,7 +59,7 @@ namespace MySharpServerExample.ServerApp
 
             if (m_ServerNode == null)
             {
-                m_ServerNode = new SharpNode(m_NodeName, m_GroupName, CommonLog.GetLogger());
+                m_ServerNode = new ServerNode(m_NodeName, m_GroupName, CommonLog.GetLogger());
                 m_ServerNode.SetServerInfoStorage(m_StorageName);
                 foreach (var svcFile in m_ServiceFileNames) m_ServerNode.AddLocalServiceFilepath(svcFile);
             }

@@ -74,7 +74,7 @@
     <Compile Include="ServerLogger.cs" />
     <Compile Include="ServiceRequestContext.cs" />
     <Compile Include="ServiceWrapper.cs" />
-    <Compile Include="SharpNode.cs" />
+    <Compile Include="ServerNode.cs" />
     <Compile Include="WebSocketServer.cs" />
     <Compile Include="WebSocketSession.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -13,7 +13,7 @@ using MySharpServer.Common;
 
 namespace MySharpServer.Framework
 {
-    public class SharpNode: IServerNode
+    public class ServerNode: IServerNode
     {
         public static readonly int PROTOCOL_NONE  = 0;
         public static readonly int PROTOCOL_HTTP  = 1;
@@ -53,7 +53,7 @@ namespace MySharpServer.Framework
         private IWebServer m_InternalServer = null;
         private IWebServer m_PublicServer = null;
 
-        public SharpNode(string serverName, string serverGroup, IServerLogger logger = null)
+        public ServerNode(string serverName, string serverGroup, IServerLogger logger = null)
         {
             m_ServerName = serverName;
             m_ServerGroupName = serverGroup;
@@ -96,8 +96,15 @@ namespace MySharpServer.Framework
 
             if (m_InternalServer != null && internalServerSetting != null)
             {
+                string cert = internalServerSetting.CertFile;
+                if (internalServerSetting.ServerProtocol.ToLower().Contains("https"))
+                {
+                    // if need ssl then just do NOT let "cert" be empty, may set it with "https"
+                    if (String.IsNullOrEmpty(cert)) cert = "https";
+                }
+
                 isInternalServerOK = m_InternalServer.Start(internalServerSetting.ServerPort, internalServerSetting.ServerIp,
-                                                            internalServerSetting.CertFile, internalServerSetting.CertKey);
+                                                            cert, internalServerSetting.CertKey);
                 if (isInternalServerOK)
                 {
                     m_InternalUrl = m_InternalServer.GetProtocol() + @"://" + m_InternalServer.GetIp() + ":" + m_InternalServer.GetPort();
@@ -134,8 +141,15 @@ namespace MySharpServer.Framework
 
             if (m_PublicServer != null && publicServerSetting != null)
             {
+                string cert = publicServerSetting.CertFile;
+                if (publicServerSetting.ServerProtocol.ToLower().Contains("https"))
+                {
+                    // if need ssl then just do NOT let "cert" be empty, may set it with "https"
+                    if (String.IsNullOrEmpty(cert)) cert = "https";
+                }
+
                 isPublicServerOK = m_PublicServer.Start(publicServerSetting.ServerPort, publicServerSetting.ServerIp,
-                                                            publicServerSetting.CertFile, publicServerSetting.CertKey);
+                                                        cert, publicServerSetting.CertKey);
                 if (isPublicServerOK)
                 {
                     var protocol = m_PublicServer.GetProtocol();
