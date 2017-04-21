@@ -44,7 +44,7 @@ namespace MySharpServer.Common
         public static string GroupClient(string server, string key, string client, string group, int timeout = 0)
         {
             string service = "network";
-            string action = "group";
+            string action = "group-client";
 
             string data = group + "|" + client;
 
@@ -54,7 +54,7 @@ namespace MySharpServer.Common
         public static string BroadcastToGroup(string server, string key, string msg, string group, int timeout = 0)
         {
             string service = "network";
-            string action = "group-broadcast";
+            string action = "broadcast-to-group";
 
             string data = group + "|" + msg;
 

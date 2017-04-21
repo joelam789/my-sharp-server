@@ -168,7 +168,7 @@ namespace MySharpServer.Framework
                             IActionCaller svc = null;
                             if (allsvc.InternalServices.TryGetValue("network", out svc))
                             {
-                                svc.Call("server", m_PublicServer, false);
+                                svc.Call("set-server", m_PublicServer, false);
                             }
                         }
                     }
@@ -443,7 +443,7 @@ namespace MySharpServer.Framework
                                         {
                                             var publicServer = m_PublicServer;
                                             if (publicServer != null && ((m_PublicProtocol == PROTOCOL_WS || m_PublicProtocol == PROTOCOL_WSS)))
-                                                internalServices[attr.Name].Call("server", publicServer, false);
+                                                internalServices[attr.Name].Call("set-server", publicServer, false);
                                         }
                                     }
                                 }

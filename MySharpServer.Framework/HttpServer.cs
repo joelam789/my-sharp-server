@@ -242,6 +242,11 @@ namespace MySharpServer.Framework
             return 0; // not supported
         }
 
+        public Dictionary<string, IWebSession> GetClients()
+        {
+            return null; // not supported
+        }
+
         public void GroupClient(string client, string group)
         {
             return; // not supported grouping by http/https

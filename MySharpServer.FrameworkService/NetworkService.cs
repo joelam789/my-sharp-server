@@ -12,15 +12,21 @@ namespace MySharpServer.FrameworkService
     {
         private IWebServer m_Server = null;
 
-        [Access(Name = "server")]
+        [Access(Name = "set-server")]
         public string SetServer(IWebServer server)
         {
             m_Server = server;
-            if (m_Server != null) Console.WriteLine("Set server for network service: " + m_Server.GetProtocol() + " on " + m_Server.GetPort());
+            if (m_Server != null) Console.WriteLine("Bind server to network service: " + m_Server.GetProtocol() + " on " + m_Server.GetPort());
             return "";
         }
 
-        [Access(Name = "group")]
+        [Access(Name = "get-server")]
+        public IWebServer GetServer(string param)
+        {
+            return m_Server;
+        }
+
+        [Access(Name = "group-client")]
         public string GroupClient(RequestContext ctx)
         {
             var server = m_Server;
@@ -38,7 +44,7 @@ namespace MySharpServer.FrameworkService
             return "";
         }
 
-        [Access(Name = "group-broadcast")]
+        [Access(Name = "broadcast-to-group")]
         public string BroadcastToGroup(RequestContext ctx)
         {
             var server = m_Server;

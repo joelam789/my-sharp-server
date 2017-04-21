@@ -22,8 +22,8 @@ namespace MySharpServer.Framework
 
         protected int m_ClientCount = 0;
 
-        protected Dictionary<string, Session> m_ClientSessions = new Dictionary<string, Session>();
-        protected Dictionary<string, List<Session>> m_ClientGroups = new Dictionary<string, List<Session>>();
+        protected Dictionary<string, IWebSession> m_ClientSessions = new Dictionary<string, IWebSession>();
+        protected Dictionary<string, List<IWebSession>> m_ClientGroups = new Dictionary<string, List<IWebSession>>();
 
         public IServerNode RequestHandler { get; private set; }
 
@@ -41,9 +41,10 @@ namespace MySharpServer.Framework
             Flags = flags;
         }
 
-        public string AddClientSession(Session session)
+        public string AddClientSession(WebSocketSession session)
         {
-            var sessionId = session.GetRemoteIp() + ":" + session.GetRemotePort();
+            var sessionId = session.GetRemoteAddress();
+            if (String.IsNullOrEmpty(sessionId)) return "";
             lock (m_ClientSessions)
             {
                 if (m_ClientSessions.ContainsKey(sessionId)) m_ClientSessions.Remove(sessionId);
@@ -53,10 +54,11 @@ namespace MySharpServer.Framework
             return sessionId;
         }
 
-        public string RemoveClientSession(Session session)
+        public string RemoveClientSession(WebSocketSession session)
         {
-            var sessionId = session.GetRemoteIp() + ":" + session.GetRemotePort();
-            var groupName = session.UserData == null ? "" : session.UserData.ToString();
+            var sessionId = session == null ? "" : session.GetRemoteAddress();
+            if (String.IsNullOrEmpty(sessionId)) return "";
+            var groupName = session.GetSocketSession().UserData == null ? "" : session.GetSocketSession().UserData.ToString();
             if (groupName.Length > 0)
             {
                 lock (m_ClientGroups)
@@ -73,6 +75,18 @@ namespace MySharpServer.Framework
                 m_ClientCount = m_ClientSessions.Count;
             }
             return sessionId + (groupName.Length > 0 ? ("@" + groupName) : "");
+        }
+
+        public string RemoveClientSession(string sessionId)
+        {
+            if (String.IsNullOrEmpty(sessionId)) return "";
+            IWebSession session = null;
+            lock (m_ClientSessions)
+            {
+                if (!m_ClientSessions.TryGetValue(sessionId, out session)) session = null;
+            }
+            if (session != null) return RemoveClientSession(session as WebSocketSession);
+            return "";
         }
 
         public bool Start(int port = 0, string ipstr = "", string certFile = "", string certKey = "")
@@ -149,24 +163,34 @@ namespace MySharpServer.Framework
             return IsWorking() ? m_ClientCount : 0;
         }
 
+        public Dictionary<string, IWebSession> GetClients()
+        {
+            Dictionary<string, IWebSession> clients = null;
+            lock (m_ClientSessions)
+            {
+                clients = new Dictionary<string, IWebSession>(m_ClientSessions);
+            }
+            return clients;
+        }
+
         public void GroupClient(string client, string group)
         {
             lock (m_ClientSessions)
             {
-                Session session = null;
+                IWebSession session = null;
                 if (m_ClientSessions.TryGetValue(client, out session))
                 {
-                    List<Session> list = null;
+                    List<IWebSession> list = null;
                     lock (m_ClientGroups)
                     {
                         if (!m_ClientGroups.TryGetValue(group, out list))
                         {
-                            list = new List<Session>();
+                            list = new List<IWebSession>();
                             m_ClientGroups.Add(group, list);
                         }
                         if (list != null && session != null)
                         {
-                            session.UserData = group;
+                            (session as WebSocketSession).GetSocketSession().UserData = group;
                             if (!list.Contains(session)) list.Add(session);
                         }
                     }
@@ -175,7 +199,7 @@ namespace MySharpServer.Framework
         }
         public void BroadcastToGroup(string msg, string group)
         {
-            List<Session> list = null;
+            List<IWebSession> list = null;
             lock (m_ClientGroups)
             {
                 if (!m_ClientGroups.TryGetValue(group, out list))
@@ -187,20 +211,20 @@ namespace MySharpServer.Framework
             {
                 foreach (var session in list)
                 {
-                    session.Send(new WebMessage(msg));
+                    session.Send(msg);
                 }
             }
         }
         public void Broadcast(string msg, List<string> clients = null)
         {
-            List<Session> list = new List<Session>();
+            List<IWebSession> list = new List<IWebSession>();
             lock (m_ClientSessions)
             {
                 if (clients != null)
                 {
                     foreach (var item in clients)
                     {
-                        Session session = null;
+                        IWebSession session = null;
                         if (m_ClientSessions.TryGetValue(item, out session))
                         {
                             list.Add(session);
@@ -219,7 +243,7 @@ namespace MySharpServer.Framework
             {
                 foreach (var session in list)
                 {
-                    session.Send(new WebMessage(msg));
+                    session.Send(msg);
                 }
             }
         }
@@ -245,7 +269,7 @@ namespace MySharpServer.Framework
 
             if (m_WebSocketServer.IsWorking())
             {
-                var clientId = m_WebSocketServer.AddClientSession(session);
+                var clientId = m_WebSocketServer.AddClientSession(new WebSocketSession(session));
                 var info = m_WebSocketServer.RequestHandler.GetName() + "@" + m_WebSocketServer.RequestHandler.GetGroup() + "|" + clientId;
                 m_WebSocketServer.RequestHandler.EmitLocalEvent("on-connect", info);
             }
@@ -255,7 +279,7 @@ namespace MySharpServer.Framework
         {
             if (m_WebSocketServer.IsWorking())
             {
-                var clientId = m_WebSocketServer.RemoveClientSession(session);
+                var clientId = m_WebSocketServer.RemoveClientSession(session.GetRemoteIp() + ":" + session.GetRemotePort());
                 var info = m_WebSocketServer.RequestHandler.GetName() + "@" + m_WebSocketServer.RequestHandler.GetGroup() + "|" + clientId;
                 m_WebSocketServer.RequestHandler.EmitLocalEvent("on-disconnect", info);
             }

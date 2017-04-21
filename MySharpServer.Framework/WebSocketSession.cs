@@ -25,6 +25,11 @@ namespace MySharpServer.Framework
             GetProtocol();
         }
 
+        public Session GetSocketSession()
+        {
+            return m_Session;
+        }
+
         public string GetGroup()
         {
             return m_Session == null || m_Session.UserData == null ? "" : m_Session.UserData.ToString();

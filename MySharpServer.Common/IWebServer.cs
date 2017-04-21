@@ -15,6 +15,7 @@ namespace MySharpServer.Common
         void Stop();
 
         int GetClientCount();
+        Dictionary<string, IWebSession> GetClients();
 
         void GroupClient(string client, string group);
         void BroadcastToGroup(string msg, string group);
