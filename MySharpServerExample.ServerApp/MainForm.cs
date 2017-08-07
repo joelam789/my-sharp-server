@@ -36,6 +36,8 @@ namespace MySharpServerExample.ServerApp
 
         private void MainForm_Load(object sender, EventArgs e)
         {
+            CommonLog.SetGuiControl(this, mmLog);
+
             var appSettings = ConfigurationManager.AppSettings;
 
             var allKeys = appSettings.AllKeys;
@@ -63,8 +65,6 @@ namespace MySharpServerExample.ServerApp
                 m_ServerNode.SetServerInfoStorage(m_StorageName);
                 foreach (var svcFile in m_ServiceFileNames) m_ServerNode.AddLocalServiceFilepath(svcFile);
             }
-
-            CommonLog.SetGuiControl(this, mmLog);
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)

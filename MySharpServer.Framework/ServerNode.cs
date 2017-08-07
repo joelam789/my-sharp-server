@@ -392,9 +392,22 @@ namespace MySharpServer.Framework
         public void AddLocalServiceFilepath(string filepath)
         {
             var svcfile = String.IsNullOrEmpty(filepath) ? "" : filepath.Trim();
-            if (svcfile.Length <= 0 || !File.Exists(svcfile)) return;
+            if (svcfile.Length <= 0) return;
+            svcfile = svcfile.Replace('\\', '/');
+            if (svcfile[0] != '/' && svcfile.IndexOf(":/") != 1) // if it is not abs path
+            {
+                string folder = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
+                if (folder != null && folder.Length > 0) svcfile = folder.Replace('\\', '/') + "/" + svcfile;
+            }
+            //m_Logger.Info("Try to add service library: " + svcfile);
+            if (!File.Exists(svcfile))
+            {
+                m_Logger.Error("Service file not found: " + svcfile);
+                return;
+            }
             if (m_LocalServiceFiles.ContainsKey(svcfile)) return;
             m_LocalServiceFiles.Add(svcfile, DateTime.MinValue);
+            m_Logger.Info("Added service library: " + svcfile);
         }
 
         private void UpdateLocalServices(object param)
@@ -422,6 +435,8 @@ namespace MySharpServer.Framework
                         if (svclib == null) m_Logger.Error("Failed to load service library: " + item.Key);
                         else
                         {
+                            //m_Logger.Info("Loaded service library: " + item.Key);
+
                             var objtypes = svclib.GetTypes();
                             foreach (var objtype in objtypes)
                             {

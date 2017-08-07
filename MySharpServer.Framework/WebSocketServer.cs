@@ -101,11 +101,35 @@ namespace MySharpServer.Framework
 
                 try
                 {
-                    if (certFile != null && certFile.Length > 0 && File.Exists(certFile))
+                    string certFilepath = certFile == null ? "" : String.Copy(certFile).Trim();
+
+                    if (certFilepath.Length > 0)
                     {
-                        if (certKey == null) m_Server.SetCert(new X509Certificate2(certFile));
-                        else m_Server.SetCert(new X509Certificate2(certFile, certKey));
-                        m_Protocol = "wss";
+                        certFilepath = certFilepath.Replace('\\', '/');
+                        if (certFilepath[0] != '/' && certFilepath.IndexOf(":/") != 1) // if it is not abs path
+                        {
+                            string folder = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
+                            if (folder != null && folder.Length > 0) certFilepath = folder.Replace('\\', '/') + "/" + certFilepath;
+                        }
+
+                        //Console.WriteLine("Try to load cert: " + certFilepath);
+                        //Logger.Info("Try to load cert: " + certFilepath);
+
+                        if (File.Exists(certFilepath))
+                        {
+                            if (certKey == null) m_Server.SetCert(new X509Certificate2(certFilepath));
+                            else m_Server.SetCert(new X509Certificate2(certFilepath, certKey));
+
+                            m_Protocol = "wss";
+
+                            Console.WriteLine("Loaded cert: " + certFilepath);
+                            Logger.Info("Loaded cert: " + certFilepath);
+                        }
+                        else
+                        {
+                            Console.WriteLine("Cert file not found: " + certFilepath);
+                            Logger.Error("Cert file not found: " + certFilepath);
+                        }
                     }
                     else m_Protocol = "ws";
                 }
