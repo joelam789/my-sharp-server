@@ -72,11 +72,16 @@ namespace MySharpServer.Framework
             if (factory != null && cnnstr != null)
             {
                 conn = factory.CreateConnection();
-                conn.ConnectionString = cnnstr.ConnectionString;
-                if (conn != null) conn.Open();
+                if (conn != null)
+                {
+                    conn.ConnectionString = cnnstr.ConnectionString;
+                    conn.Open();
+                }
             }
+
             return conn;
         }
+
     }
 
     public class DbConnectionConfig
@@ -90,4 +95,5 @@ namespace MySharpServer.Framework
             CnnString = cnnstr;
         }
     }
+
 }

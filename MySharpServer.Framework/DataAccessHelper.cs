@@ -8,11 +8,18 @@ using System.Text;
 using CacheManager.Core;
 using MySharpServer.Common;
 
+//using System.Data.SqlClient;
+//using Microsoft.Practices.EnterpriseLibrary.TransientFaultHandling;
+
 namespace MySharpServer.Framework
 {
     public class DataAccessHelper: IDataAccessHelper
     {
         public static readonly string CNN_STRING_SECTION = "connectionStrings";
+
+        public string DefaultDatabaseName { get; set; }
+
+        public string DefaultCacheName { get; set; }
 
         private Dictionary<string, DbConnectionProvider> m_DbCnnProviders = new Dictionary<string, DbConnectionProvider>();
 
@@ -20,6 +27,9 @@ namespace MySharpServer.Framework
 
         public DataAccessHelper()
         {
+            DefaultDatabaseName = "";
+            DefaultCacheName = "";
+
             // Get the application configuration file.
             var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
 
@@ -49,14 +59,20 @@ namespace MySharpServer.Framework
             foreach (var item in m_DbCnnProviders) item.Value.RefreshSetting();
         }
 
-        public IDbConnection OpenDatabase(string cnnStrName)
+        public IDbConnection OpenDatabase(string cnnStrName = "")
         {
+            var targetName = cnnStrName;
+            if (targetName == null || targetName.Length <= 0) targetName = DefaultDatabaseName;
+
+            IDbConnection cnn = null;
             DbConnectionProvider provider = null;
-            if (m_DbCnnProviders.TryGetValue(cnnStrName, out provider))
+            if (m_DbCnnProviders.TryGetValue(targetName, out provider))
             {
-                return provider.OpenDbConnection();
+                if (provider != null) cnn = provider.OpenDbConnection();
             }
-            return null;
+
+            if (cnn == null) throw new Exception("Failed to open database: " + targetName);
+            return cnn;
         }
 
         public IDataParameter AddParam(IDbCommand cmd, string paramName, object paramValue)
@@ -68,9 +84,15 @@ namespace MySharpServer.Framework
             return prm;
         }
 
-        public ICacheManager<object> OpenCache(string cacheName)
+        public ICacheManager<object> OpenCache(string cacheName = "")
         {
-            return m_CacheProvider.OpenCache(cacheName);
+            var targetName = cacheName;
+            if (targetName == null || targetName.Length <= 0) targetName = DefaultCacheName;
+
+            var cache = m_CacheProvider.OpenCache(targetName);
+            if (cache == null) throw new Exception("Failed to open cache storage: " + targetName);
+
+            return cache;
         }
 
         public void RefreshCacheSettings(string cacheConfigSection = "")
@@ -85,5 +107,50 @@ namespace MySharpServer.Framework
 
             m_CacheProvider.Refresh();
         }
+
+        //public static RetryPolicy GetRetryPolicy(int retryTimes = 5, int retryIntervalMS = 1500)
+        //{
+        //    return new RetryPolicy(new SQLTransientErrorDetectionStrategy(), retryTimes, TimeSpan.Zero, TimeSpan.FromMilliseconds(retryIntervalMS));
+        //}
     }
+
+    /*
+    public class SQLTransientErrorDetectionStrategy : ITransientErrorDetectionStrategy
+    {
+        // Simulate Entityframework's SqlAzureExecutionStrategy.
+        public bool IsTransient(Exception ex)
+        {
+            if (ex is TimeoutException)
+            {
+                return true;
+            }
+            if (ex is SqlException)
+            {
+                Logger.Error("SQL DB Error From SQLTransientErrorDetectionStrategy: " + ((SqlException)ex).Number);
+                switch (((SqlException)ex).Number)
+                {
+                    case 40613:
+                    //case 40515: 
+                    case 40501:
+                    case 40197:
+                    case 10929:
+                    case 10928:
+                    case 10060:
+                    case 10054:
+                    case 10053:
+                    case 1231:
+                    case 233:
+                    case 64:
+                    case 20:
+                    //case 5:  // For testing only, connection creation blocked by firewall.
+                    //case 0:  // For testing only, query's connection killed.
+                        return true;
+                }
+            }
+            return false;
+        }
+    }
+    */
+
 }
+

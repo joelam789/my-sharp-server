@@ -23,12 +23,20 @@ namespace MySharpServerExample.ServerService
             string lastAccessTime = "";
             string currentTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
-            var cache = ctx.DataHelper.OpenCache("cache");
-            if (cache != null)
+            try
             {
+                var cache = ctx.DataHelper.OpenCache("cache");
                 var value = cache.Get(userName);
                 if (value != null) lastAccessTime = value.ToString();
                 cache.Put(userName, currentTime);
+            }
+            catch (Exception ex)
+            {
+                var errMsg = "Failed to access cache";
+                ctx.LocalLogger.Error(errMsg + " - " + ex.Message);
+                ctx.LocalLogger.Error(ex.StackTrace);
+                ctx.Session.Send(errMsg);
+                return;
             }
 
             if (lastAccessTime == null || lastAccessTime.Length <= 0) lastAccessTime = "This is your fist time to say hello";

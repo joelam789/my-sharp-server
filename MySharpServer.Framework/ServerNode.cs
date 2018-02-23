@@ -239,11 +239,12 @@ namespace MySharpServer.Framework
         }
         public void SetServerInfoStorage(string value)
         {
-            m_ServerInfoStorage = value;
+            m_ServerInfoStorage = value; // may set it to empty string if want to run in standalone mode
         }
 
         private void UploadLocalServerInfo(object param)
         {
+            if (m_ServerInfoStorage == null || m_ServerInfoStorage.Length <= 0) return;
             if (m_IsUploadingLocalServerInfo) return;
             else m_IsUploadingLocalServerInfo = true;
             try
@@ -251,7 +252,7 @@ namespace MySharpServer.Framework
                 if (m_DataHelper == null || !IsWorking()) return; // upload nothing if local server is not working
                 using (var cnn = m_DataHelper.OpenDatabase(m_ServerInfoStorage))
                 {
-                    if (cnn == null) return;
+                    //if (cnn == null) return;
                     var publicServer = m_PublicServer;
                     using (var cmd = cnn.CreateCommand())
                     {
@@ -329,6 +330,7 @@ namespace MySharpServer.Framework
 
         private void UpdateRemoteServices(object param)
         {
+            if (m_ServerInfoStorage == null || m_ServerInfoStorage.Length <= 0) return;
             if (m_IsUpdatingRemoteServices) return;
             else m_IsUpdatingRemoteServices = true;
             try
@@ -336,7 +338,7 @@ namespace MySharpServer.Framework
                 if (m_DataHelper == null) return;
                 using (var cnn = m_DataHelper.OpenDatabase(m_ServerInfoStorage))
                 {
-                    if (cnn == null) return;
+                    //if (cnn == null) return;
                     Dictionary<string, List<string>> services = new Dictionary<string, List<string>>();
                     using (var cmd = cnn.CreateCommand())
                     {
