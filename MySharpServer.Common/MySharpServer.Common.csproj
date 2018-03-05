@@ -52,6 +52,7 @@
     <Compile Include="IServerNode.cs" />
     <Compile Include="IServerLogger.cs" />
     <Compile Include="IActionCaller.cs" />
+    <Compile Include="ISimpleLocker.cs" />
     <Compile Include="IWebServer.cs" />
     <Compile Include="IWebSession.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

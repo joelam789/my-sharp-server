@@ -95,6 +95,16 @@ namespace MySharpServer.Framework
             return cache;
         }
 
+        public ISimpleLocker Lock(ICacheManager<object> cache, string key, int lifetimeSeconds = 10)
+        {
+            return new SimpleLocker(cache, key, null, lifetimeSeconds);
+        }
+
+        public ISimpleLocker Lock(ICacheManager<object> cache, string key, string region, int lifetimeSeconds = 10)
+        {
+            return new SimpleLocker(cache, key, region, lifetimeSeconds);
+        }
+
         public void RefreshCacheSettings(string cacheConfigSection = "")
         {
             try

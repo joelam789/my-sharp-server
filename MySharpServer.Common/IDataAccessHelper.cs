@@ -17,6 +17,9 @@ namespace MySharpServer.Common
 
         ICacheManager<object> OpenCache(string cacheName);
 
+        ISimpleLocker Lock(ICacheManager<object> cache, string key, int lifetimeSeconds = 10);
+        ISimpleLocker Lock(ICacheManager<object> cache, string key, string region, int lifetimeSeconds = 10);
+
         void RefreshCacheSettings(string cacheConfigSection = "");
     }
 }

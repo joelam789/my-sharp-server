@@ -75,6 +75,7 @@
     <Compile Include="ServiceRequestContext.cs" />
     <Compile Include="ServiceWrapper.cs" />
     <Compile Include="ServerNode.cs" />
+    <Compile Include="SimpleLocker.cs" />
     <Compile Include="WebSocketServer.cs" />
     <Compile Include="WebSocketSession.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
