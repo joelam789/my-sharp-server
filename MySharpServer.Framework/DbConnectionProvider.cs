@@ -12,6 +12,7 @@ namespace MySharpServer.Framework
     public class DbConnectionProvider
     {
         public static readonly string DB_PROVIDER_SECTION = "system.data";
+        public static readonly string DB_PROVIDER_FACTORY_TAG = "DbProviderFactories";
 
         private string m_ConnectionStringName = "";
         private DbConnectionConfig m_Config = null;
@@ -35,13 +36,13 @@ namespace MySharpServer.Framework
 
             if (factory == null)
             {
-                DataSet section = ConfigurationManager.GetSection("system.data") as DataSet;
+                DataSet section = ConfigurationManager.GetSection(DB_PROVIDER_SECTION) as DataSet;
                 if (section != null)
                 {
-                    DataTable table = section.Tables["DbProviderFactories"];
-                    if (table != null)
+                    DataTable tableFactory = section.Tables[DB_PROVIDER_FACTORY_TAG];
+                    if (tableFactory != null)
                     {
-                        foreach (DataRow row in table.Rows)
+                        foreach (DataRow row in tableFactory.Rows)
                         {
                             if (cnnstr.ProviderName.Equals(row["Name"]))
                             {

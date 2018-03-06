@@ -21,7 +21,7 @@ namespace MySharpServer.Framework
 
         public string DefaultCacheName { get; set; }
 
-        private Dictionary<string, DbConnectionProvider> m_DbCnnProviders = new Dictionary<string, DbConnectionProvider>();
+        private Dictionary<string, DbConnectionProvider> m_DbCnnProviders = null;
 
         private CacheProvider m_CacheProvider = null;
 
@@ -30,33 +30,76 @@ namespace MySharpServer.Framework
             DefaultDatabaseName = "";
             DefaultCacheName = "";
 
-            // Get the application configuration file.
-            var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-
-            // Get the conectionStrings section.
-            ConnectionStringsSection csSection = config.ConnectionStrings;
-
-            for (int i = 0; i < ConfigurationManager.ConnectionStrings.Count; i++)
-            {
-                ConnectionStringSettings cnnstr = csSection.ConnectionStrings[i];
-                if (!m_DbCnnProviders.ContainsKey(cnnstr.Name)) m_DbCnnProviders.Add(cnnstr.Name, new DbConnectionProvider(cnnstr.Name));
-            }
+            m_DbCnnProviders = new Dictionary<string, DbConnectionProvider>();
 
             m_CacheProvider = new CacheProvider();
+
+            RefreshDatabaseSettings();
         }
 
         public void RefreshDatabaseSettings(string dbConfigSection = "")
         {
+            /*
+            // try to reload configuration file.
+            bool reloadedConfig = false;
+            Configuration config = null;
+            try
+            {
+                config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            }
+            catch { }
+
+            try
+            {
+                if (config == null) config = System.Web.Configuration.WebConfigurationManager.OpenWebConfiguration("~");
+            }
+            catch { }
+
+            try
+            {
+                if (config != null)
+                {
+                    var providers = new Dictionary<string, DbConnectionProvider>();
+
+                    // Get the conectionStrings section.
+                    ConnectionStringsSection csSection = config.ConnectionStrings;
+                    for (int i = 0; i < ConfigurationManager.ConnectionStrings.Count; i++)
+                    {
+                        ConnectionStringSettings cnnstr = csSection.ConnectionStrings[i];
+                        if (!providers.ContainsKey(cnnstr.Name)) providers.Add(cnnstr.Name, new DbConnectionProvider(cnnstr.Name));
+                    }
+
+                    m_DbCnnProviders = providers; // thread-safe (reads and writes of reference types are atomic)
+                    reloadedConfig = true;
+                }
+            }
+            catch { }
+            */
+
+            bool reloadedConfig = false;
             try
             {
                 ConfigurationManager.RefreshSection(DbConnectionProvider.DB_PROVIDER_SECTION);
                 ConfigurationManager.RefreshSection(CNN_STRING_SECTION);
+
                 if (dbConfigSection != null && dbConfigSection.Length > 0)
                     ConfigurationManager.RefreshSection(dbConfigSection);
+
+                var providers = new Dictionary<string, DbConnectionProvider>();
+                var cnnStringSection = ConfigurationManager.ConnectionStrings;
+                foreach (var item in cnnStringSection)
+                {
+                    ConnectionStringSettings cnnstr = item as ConnectionStringSettings;
+                    if (cnnstr != null && !providers.ContainsKey(cnnstr.Name))
+                        providers.Add(cnnstr.Name, new DbConnectionProvider(cnnstr.Name));
+                }
+                m_DbCnnProviders = providers; // thread-safe (reads and writes of reference types are atomic)
+                reloadedConfig = true;
+                
             }
             catch { }
 
-            foreach (var item in m_DbCnnProviders) item.Value.RefreshSetting();
+            if (!reloadedConfig) foreach (var item in m_DbCnnProviders) item.Value.RefreshSetting(); // refresh existing providers
         }
 
         public IDbConnection OpenDatabase(string cnnStrName = "")
@@ -66,7 +109,8 @@ namespace MySharpServer.Framework
 
             IDbConnection cnn = null;
             DbConnectionProvider provider = null;
-            if (m_DbCnnProviders.TryGetValue(targetName, out provider))
+            var providers = m_DbCnnProviders; // thread-safe (reads and writes of reference types are atomic)
+            if (providers.TryGetValue(targetName, out provider))
             {
                 if (provider != null) cnn = provider.OpenDbConnection();
             }

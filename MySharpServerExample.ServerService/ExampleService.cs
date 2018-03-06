@@ -33,8 +33,8 @@ namespace MySharpServerExample.ServerService
             catch (Exception ex)
             {
                 var errMsg = "Failed to access cache";
-                ctx.LocalLogger.Error(errMsg + " - " + ex.Message);
-                ctx.LocalLogger.Error(ex.StackTrace);
+                ctx.Logger.Error(errMsg + " - " + ex.Message);
+                ctx.Logger.Error(ex.StackTrace);
                 ctx.Session.Send(errMsg);
                 return;
             }

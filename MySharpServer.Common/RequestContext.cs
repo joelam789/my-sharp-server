@@ -15,7 +15,7 @@ namespace MySharpServer.Common
 
         public IJsonCodec JsonCodec { get; set; }
 
-        public IServerLogger LocalLogger { get; set; }
+        public IServerLogger Logger { get; set; }
         public ServiceCollection LocalServices { get; set; }
         public Dictionary<string, List<string>> RemoteServices { get; set; }
 
@@ -36,7 +36,7 @@ namespace MySharpServer.Common
 
             JsonCodec = null;
 
-            LocalLogger = null;
+            Logger = null;
             LocalServices = null;
             RemoteServices = null;
 

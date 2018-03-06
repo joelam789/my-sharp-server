@@ -548,7 +548,7 @@ namespace MySharpServer.Framework
             {
                 request.DataHelper = m_DataHelper;
                 request.JsonCodec = m_JsonCodec;
-                request.LocalLogger = m_Logger;
+                request.Logger = m_Logger;
                 request.LocalServer = m_ServerName + (String.IsNullOrEmpty(m_ServerGroupName) ? "" : ("@" + m_ServerGroupName));
                 request.LocalServices = m_LocalServices;
                 request.RemoteServices = m_RemoteServices;
