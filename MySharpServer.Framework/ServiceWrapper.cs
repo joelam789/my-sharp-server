@@ -56,21 +56,21 @@ namespace MySharpServer.Framework
             }
         }
 
-        public string ValidateRequest(object param)
+        public async Task<string> ValidateRequest(object param)
         {
-            var result = Call("validate-request", param, false, "");
+            var result = await Call("validate-request", param, false, "");
             if (result != null) return result.ToString();
             return "";
         }
 
-        public TaskFactory GetTaskFactory(object param)
+        public async Task<TaskFactory> GetTaskFactory(object param)
         {
-            var result = Call("get-task-factory", param, false, Task.Factory);
+            var result = await Call("get-task-factory", param, false, Task.Factory);
             if (result != null) return result as TaskFactory;
             return null;
         }
 
-        public object Call(string actionName, object param, bool publicOnly, object defaultResult)
+        public async Task<object> Call(string actionName, object param, bool publicOnly, object defaultResult)
         {
             object result = null;
             try
@@ -86,6 +86,17 @@ namespace MySharpServer.Framework
                 }
                 if (method != null) result = method.Invoke(ServiceObject, new object[] { param });
                 else if (defaultResult != null) result = defaultResult;
+
+                if (result != null)
+                {
+                    Task<object> ret = result as Task<object>;
+                    if (ret != null) return await ret;
+                    else
+                    {
+                        Task task = result as Task;
+                        if (task != null) await task;
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -95,9 +106,9 @@ namespace MySharpServer.Framework
             return result;
         }
 
-        public object Call(string actionName, object param, bool publicOnly = true)
+        public async Task<object> Call(string actionName, object param, bool publicOnly = true)
         {
-            return Call(actionName, param, publicOnly, null);
+            return await Call(actionName, param, publicOnly, null);
         }
 
     }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace MySharpServer.Common
 {
@@ -13,7 +14,7 @@ namespace MySharpServer.Common
         string GetRemoteAddress();
 
         void BeginResponse();
-        void Send(string msg);
+        Task Send(string msg);
         void EndResponse();
 
         void CloseConnection();

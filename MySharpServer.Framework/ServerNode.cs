@@ -541,7 +541,7 @@ namespace MySharpServer.Framework
             return null;
         }
 
-        public void HandleRequest(RequestContext request)
+        public async Task HandleRequest(RequestContext request)
         {
             if (request.PathParts.Count < 2) request.Session.CloseConnection();
             else
@@ -557,13 +557,13 @@ namespace MySharpServer.Framework
                     var group = request.Session.GetGroup();
                     request.EntryServer = request.LocalServer;
                     request.ClientAddress = request.Session.GetRemoteAddress() + (String.IsNullOrEmpty(group) ? "" : ("@" + group));
-                    HandlePublicRequest(request);
+                    await HandlePublicRequest(request);
                 }
-                else HandleInternalRequest(request);
+                else await HandleInternalRequest(request);
             }
         }
 
-        private async void HandlePublicRequest(RequestContext request)
+        private async Task HandlePublicRequest(RequestContext request)
         {
             //m_Logger.Info("HandlePublicRequest() - " + request.PathParts[0] + "::" + request.PathParts[1]);
 
@@ -575,18 +575,18 @@ namespace MySharpServer.Framework
             if (request.LocalServices != null && request.LocalServices.PublicServices.TryGetValue(serviceName, out caller))
             {
                 ServiceWrapper svc = caller as ServiceWrapper;
-                string errormsg = svc != null ? svc.ValidateRequest(request) : "Invalid service";
+                string errormsg = svc != null ? await svc.ValidateRequest(request) : "Invalid service";
                 if (errormsg == null || errormsg.Length <= 0)
                 {
-                    var tasks = svc.GetTaskFactory(request);
-                    if (tasks != null) await tasks.StartNew((param) => ProcessData(param), new ServiceRequestContext(svc, request, true));
-                    else ProcessData(new ServiceRequestContext(svc, request, true)); // process it in main thread (single thread)
+                    var tasks = await svc.GetTaskFactory(request);
+                    if (tasks != null) await tasks.StartNew(async (param) => await ProcessData(param), new ServiceRequestContext(svc, request, true));
+                    else await ProcessData(new ServiceRequestContext(svc, request, true)); // process it in main thread (single thread)
                 }
                 //else request.Session.CloseConnection();
                 else
                 {
                     request.Session.BeginResponse();
-                    request.Session.Send("{'error': '" + errormsg + "'}");
+                    await request.Session.Send("{'error': '" + errormsg + "'}");
                     request.Session.EndResponse();
                 }
             }
@@ -613,13 +613,13 @@ namespace MySharpServer.Framework
                     }
                 }
                 request.Session.BeginResponse();
-                if (result != null && result.Length > 0) request.Session.Send(result);
+                if (result != null && result.Length > 0) await request.Session.Send(result);
                 request.Session.EndResponse();
             }
             else request.Session.EndResponse();
         }
 
-        private void HandleInternalRequest(RequestContext request)
+        private async Task HandleInternalRequest(RequestContext request)
         {
             //m_Logger.Info("HandleInternalRequest() - " + request.PathParts[0] + "::" + request.PathParts[1]);
 
@@ -643,18 +643,18 @@ namespace MySharpServer.Framework
                 else
                 {
                     ServiceWrapper svc = caller as ServiceWrapper;
-                    string errormsg = svc != null ? svc.ValidateRequest(request) : "Invalid service";
+                    string errormsg = svc != null ? await svc.ValidateRequest(request) : "Invalid service";
                     if (errormsg == null || errormsg.Length <= 0)
                     {
-                        var tasks = svc.GetTaskFactory(request);
-                        if (tasks != null) tasks.StartNew((param) => ProcessData(param), new ServiceRequestContext(svc, request, false));
-                        else ProcessData(new ServiceRequestContext(svc, request, false)); // process it in main thread (single thread)
+                        var tasks = await svc.GetTaskFactory(request);
+                        if (tasks != null) await tasks.StartNew(async (param) => await ProcessData(param), new ServiceRequestContext(svc, request, false));
+                        else await ProcessData(new ServiceRequestContext(svc, request, false)); // process it in main thread (single thread)
                     }
                     //else request.Session.EndResponse();
                     else
                     {
                         request.Session.BeginResponse();
-                        request.Session.Send("{'error': '" + errormsg + "'}");
+                        await request.Session.Send("{'error': '" + errormsg + "'}");
                         request.Session.EndResponse();
                     }
                 }
@@ -673,18 +673,18 @@ namespace MySharpServer.Framework
                 else
                 {
                     ServiceWrapper svc = caller as ServiceWrapper;
-                    string errormsg = svc != null ? svc.ValidateRequest(request) : "Invalid service";
+                    string errormsg = svc != null ? await svc.ValidateRequest(request) : "Invalid service";
                     if (errormsg == null || errormsg.Length <= 0)
                     {
-                        var tasks = svc.GetTaskFactory(request);
-                        if (tasks != null) tasks.StartNew((param) => ProcessData(param), new ServiceRequestContext(svc, request, true));
-                        else ProcessData(new ServiceRequestContext(svc, request, true)); // process it in main thread (single thread)
+                        var tasks = await svc.GetTaskFactory(request);
+                        if (tasks != null) await tasks.StartNew(async (param) => await ProcessData(param), new ServiceRequestContext(svc, request, true));
+                        else await ProcessData(new ServiceRequestContext(svc, request, true)); // process it in main thread (single thread)
                     }
                     //else request.Session.EndResponse();
                     else
                     {
                         request.Session.BeginResponse();
-                        request.Session.Send("{'error': '" + errormsg + "'}");
+                        await request.Session.Send("{'error': '" + errormsg + "'}");
                         request.Session.EndResponse();
                     }
                 }
@@ -692,14 +692,14 @@ namespace MySharpServer.Framework
             
         }
 
-        private void ProcessData(object obj)
+        private async Task ProcessData(object obj)
         {
             ServiceRequestContext ctx = obj as ServiceRequestContext;
             if (ctx == null) return;
             try
             {
                 ctx.Context.Session.BeginResponse();
-                ctx.Service.Call(ctx.Context.PathParts[1], ctx.Context, ctx.IsPublicRequest);
+                await ctx.Service.Call(ctx.Context.PathParts[1], ctx.Context, ctx.IsPublicRequest);
                 ctx.Context.Session.EndResponse();
             }
             catch (Exception ex)

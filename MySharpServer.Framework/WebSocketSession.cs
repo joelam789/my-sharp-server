@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Security;
 using System.Text;
+using System.Threading.Tasks;
 
 using SharpNetwork.Core;
 using SharpNetwork.SimpleWebSocket;
@@ -60,12 +61,15 @@ namespace MySharpServer.Framework
             return m_RemoteAddress;
         }
 
-        public void Send(string msg)
+        public async Task Send(string msg)
         {
-            if (m_Session != null)
-            {
-                m_Session.Send(new WebMessage(msg));
-            }
+           await Task.Run(() =>
+           {
+               if (m_Session != null)
+               {
+                   m_Session.Send(new WebMessage(msg));
+               }
+           });
         }
 
         public void BeginResponse()

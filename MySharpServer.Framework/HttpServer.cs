@@ -134,7 +134,7 @@ namespace MySharpServer.Framework
             }
         }
 
-        private void ListenerCallback(IAsyncResult ar)
+        private async void ListenerCallback(IAsyncResult ar)
         {
             HttpListener listener = null;
             HttpListenerContext context = null;
@@ -158,7 +158,7 @@ namespace MySharpServer.Framework
                 if (context != null && remoteIp.Length > 0)
                 {
                     //Task.Factory.StartNew((param) => ProcessData(param), context);
-                    ProcessData(context);
+                    await ProcessData(context);
                 }
                 else if (context != null)
                 {
@@ -172,7 +172,7 @@ namespace MySharpServer.Framework
             }
         }
 
-        protected virtual async void ProcessData(object obj)
+        protected virtual async Task ProcessData(object obj)
         {
             HttpListenerContext ctx = obj as HttpListenerContext;
             if (ctx == null) return;
@@ -185,7 +185,7 @@ namespace MySharpServer.Framework
                 {
                     content += (content.EndsWith("/") ? "" : "/") + (await reader.ReadToEndAsync());
                 }
-                m_RequestHandler.HandleRequest(new RequestContext(new HttpSession(ctx, m_AllowOrigin), content, m_Flags));
+                await m_RequestHandler.HandleRequest(new RequestContext(new HttpSession(ctx, m_AllowOrigin), content, m_Flags));
             }
             catch (Exception ex)
             {

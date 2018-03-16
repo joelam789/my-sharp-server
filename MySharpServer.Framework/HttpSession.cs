@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Security;
 using System.Text;
+using System.Threading.Tasks;
 
 using MySharpServer.Common;
 
@@ -76,7 +77,7 @@ namespace MySharpServer.Framework
             }
         }
 
-        public async void Send(string msg)
+        public async Task Send(string msg)
         {
             if (m_Session != null)
             {
