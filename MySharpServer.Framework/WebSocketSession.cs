@@ -69,7 +69,7 @@ namespace MySharpServer.Framework
                {
                    m_Session.Send(new WebMessage(msg));
                }
-           });
+           }).ConfigureAwait(false);
         }
 
         public void BeginResponse()

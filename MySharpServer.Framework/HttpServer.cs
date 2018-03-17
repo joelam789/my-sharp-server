@@ -26,8 +26,15 @@ namespace MySharpServer.Framework
 
         protected string m_AllowOrigin = "";
 
+        protected ConcurrentExclusiveSchedulerPair m_TaskSchedulerPair = null;
+        protected TaskFactory m_ListenerTaskFactory = null;
+
+
         public HttpServer(IServerNode handler, IServerLogger logger = null, int flags = 0, string allowOrigin = "")
         {
+            m_TaskSchedulerPair = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default, Environment.ProcessorCount * 2);
+            m_ListenerTaskFactory = new TaskFactory(m_TaskSchedulerPair.ConcurrentScheduler);
+
             m_RequestHandler = handler;
 
             m_Logger = logger;
@@ -158,7 +165,8 @@ namespace MySharpServer.Framework
                 if (context != null && remoteIp.Length > 0)
                 {
                     //Task.Factory.StartNew((param) => ProcessData(param), context);
-                    await ProcessData(context);
+                    //await ProcessData(context);
+                    await m_ListenerTaskFactory.StartNew((param) => ProcessData(param), context).ConfigureAwait(false);
                 }
                 else if (context != null)
                 {

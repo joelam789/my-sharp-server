@@ -579,8 +579,8 @@ namespace MySharpServer.Framework
                 if (errormsg == null || errormsg.Length <= 0)
                 {
                     var tasks = await svc.GetTaskFactory(request);
-                    if (tasks != null) await tasks.StartNew(async (param) => await ProcessData(param), new ServiceRequestContext(svc, request, true));
-                    else await ProcessData(new ServiceRequestContext(svc, request, true)); // process it in main thread (single thread)
+                    if (tasks != null) await tasks.StartNew((param) => ProcessData(param), new ServiceRequestContext(svc, request, true)).ConfigureAwait(false);
+                    else await ProcessData(new ServiceRequestContext(svc, request, true)); // process it in listener's thread
                 }
                 //else request.Session.CloseConnection();
                 else
@@ -647,8 +647,8 @@ namespace MySharpServer.Framework
                     if (errormsg == null || errormsg.Length <= 0)
                     {
                         var tasks = await svc.GetTaskFactory(request);
-                        if (tasks != null) await tasks.StartNew(async (param) => await ProcessData(param), new ServiceRequestContext(svc, request, false));
-                        else await ProcessData(new ServiceRequestContext(svc, request, false)); // process it in main thread (single thread)
+                        if (tasks != null) await tasks.StartNew((param) => ProcessData(param), new ServiceRequestContext(svc, request, false)).ConfigureAwait(false);
+                        else await ProcessData(new ServiceRequestContext(svc, request, false)); // process it in listener's thread
                     }
                     //else request.Session.EndResponse();
                     else
@@ -677,8 +677,8 @@ namespace MySharpServer.Framework
                     if (errormsg == null || errormsg.Length <= 0)
                     {
                         var tasks = await svc.GetTaskFactory(request);
-                        if (tasks != null) await tasks.StartNew(async (param) => await ProcessData(param), new ServiceRequestContext(svc, request, true));
-                        else await ProcessData(new ServiceRequestContext(svc, request, true)); // process it in main thread (single thread)
+                        if (tasks != null) await tasks.StartNew((param) => ProcessData(param), new ServiceRequestContext(svc, request, true)).ConfigureAwait(false);
+                        else await ProcessData(new ServiceRequestContext(svc, request, true)); // process it in listener's thread
                     }
                     //else request.Session.EndResponse();
                     else
