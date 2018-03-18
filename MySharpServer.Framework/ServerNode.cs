@@ -541,7 +541,7 @@ namespace MySharpServer.Framework
             return null;
         }
 
-        public async Task HandleRequest(RequestContext request)
+        public void HandleRequest(RequestContext request)
         {
             if (request.PathParts.Count < 2) request.Session.CloseConnection();
             else
@@ -557,13 +557,13 @@ namespace MySharpServer.Framework
                     var group = request.Session.GetGroup();
                     request.EntryServer = request.LocalServer;
                     request.ClientAddress = request.Session.GetRemoteAddress() + (String.IsNullOrEmpty(group) ? "" : ("@" + group));
-                    await HandlePublicRequest(request);
+                    HandlePublicRequest(request);
                 }
-                else await HandleInternalRequest(request);
+                else HandleInternalRequest(request);
             }
         }
 
-        private async Task HandlePublicRequest(RequestContext request)
+        private async void HandlePublicRequest(RequestContext request)
         {
             //m_Logger.Info("HandlePublicRequest() - " + request.PathParts[0] + "::" + request.PathParts[1]);
 
@@ -580,7 +580,7 @@ namespace MySharpServer.Framework
                 {
                     var tasks = await svc.GetTaskFactory(request);
                     if (tasks != null) await tasks.StartNew((param) => ProcessData(param), new ServiceRequestContext(svc, request, true)).ConfigureAwait(false);
-                    else await ProcessData(new ServiceRequestContext(svc, request, true)); // process it in listener's thread
+                    else ProcessData(new ServiceRequestContext(svc, request, true)); // process it in listener's thread
                 }
                 //else request.Session.CloseConnection();
                 else
@@ -619,7 +619,7 @@ namespace MySharpServer.Framework
             else request.Session.EndResponse();
         }
 
-        private async Task HandleInternalRequest(RequestContext request)
+        private async void HandleInternalRequest(RequestContext request)
         {
             //m_Logger.Info("HandleInternalRequest() - " + request.PathParts[0] + "::" + request.PathParts[1]);
 
@@ -648,7 +648,7 @@ namespace MySharpServer.Framework
                     {
                         var tasks = await svc.GetTaskFactory(request);
                         if (tasks != null) await tasks.StartNew((param) => ProcessData(param), new ServiceRequestContext(svc, request, false)).ConfigureAwait(false);
-                        else await ProcessData(new ServiceRequestContext(svc, request, false)); // process it in listener's thread
+                        else ProcessData(new ServiceRequestContext(svc, request, false)); // process it in listener's thread
                     }
                     //else request.Session.EndResponse();
                     else
@@ -678,7 +678,7 @@ namespace MySharpServer.Framework
                     {
                         var tasks = await svc.GetTaskFactory(request);
                         if (tasks != null) await tasks.StartNew((param) => ProcessData(param), new ServiceRequestContext(svc, request, true)).ConfigureAwait(false);
-                        else await ProcessData(new ServiceRequestContext(svc, request, true)); // process it in listener's thread
+                        else ProcessData(new ServiceRequestContext(svc, request, true)); // process it in listener's thread
                     }
                     //else request.Session.EndResponse();
                     else
@@ -692,7 +692,7 @@ namespace MySharpServer.Framework
             
         }
 
-        private async Task ProcessData(object obj)
+        private async void ProcessData(object obj)
         {
             ServiceRequestContext ctx = obj as ServiceRequestContext;
             if (ctx == null) return;

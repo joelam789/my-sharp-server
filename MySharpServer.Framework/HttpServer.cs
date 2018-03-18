@@ -29,10 +29,12 @@ namespace MySharpServer.Framework
         protected ConcurrentExclusiveSchedulerPair m_TaskSchedulerPair = null;
         protected TaskFactory m_ListenerTaskFactory = null;
 
+        public static int ListenThreadCount = Environment.ProcessorCount * 2;
+
 
         public HttpServer(IServerNode handler, IServerLogger logger = null, int flags = 0, string allowOrigin = "")
         {
-            m_TaskSchedulerPair = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default, Environment.ProcessorCount * 2);
+            m_TaskSchedulerPair = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default, ListenThreadCount);
             m_ListenerTaskFactory = new TaskFactory(m_TaskSchedulerPair.ConcurrentScheduler);
 
             m_RequestHandler = handler;
@@ -180,7 +182,7 @@ namespace MySharpServer.Framework
             }
         }
 
-        protected virtual async Task ProcessData(object obj)
+        protected virtual async void ProcessData(object obj)
         {
             HttpListenerContext ctx = obj as HttpListenerContext;
             if (ctx == null) return;
@@ -193,7 +195,7 @@ namespace MySharpServer.Framework
                 {
                     content += (content.EndsWith("/") ? "" : "/") + (await reader.ReadToEndAsync());
                 }
-                await m_RequestHandler.HandleRequest(new RequestContext(new HttpSession(ctx, m_AllowOrigin), content, m_Flags));
+                m_RequestHandler.HandleRequest(new RequestContext(new HttpSession(ctx, m_AllowOrigin), content, m_Flags));
             }
             catch (Exception ex)
             {

@@ -8,7 +8,7 @@ namespace MySharpServer.Common
 {
     public interface IServerNode
     {
-        Task HandleRequest(RequestContext request);
+        void HandleRequest(RequestContext request);
 
         object EmitLocalEvent(string eventName, object eventData);
 

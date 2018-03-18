@@ -82,7 +82,7 @@ namespace MySharpServer.Framework
             if (m_Session != null)
             {
                 byte[] buffer = Encoding.UTF8.GetBytes(msg);
-                await m_Session.Response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
+                await m_Session.Response.OutputStream.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
             }
         }
 

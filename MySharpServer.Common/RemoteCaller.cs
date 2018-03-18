@@ -10,6 +10,17 @@ namespace MySharpServer.Common
 {
     public static class RemoteCaller
     {
+        static RemoteCaller()
+        {
+            HttpConnectionLimit = Environment.ProcessorCount * 8;
+        }
+
+        public static int HttpConnectionLimit
+        {
+            get { return ServicePointManager.DefaultConnectionLimit; }
+            set { ServicePointManager.DefaultConnectionLimit = value; }
+        }
+
         public static async Task<string> Call(string url, string service, string action, string data, string key = "", int timeout = 0)
         {
             string result = "";
