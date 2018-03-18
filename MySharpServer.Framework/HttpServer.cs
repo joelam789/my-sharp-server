@@ -143,7 +143,7 @@ namespace MySharpServer.Framework
             }
         }
 
-        private async void ListenerCallback(IAsyncResult ar)
+        private void ListenerCallback(IAsyncResult ar)
         {
             HttpListener listener = null;
             HttpListenerContext context = null;
@@ -168,7 +168,7 @@ namespace MySharpServer.Framework
                 {
                     //Task.Factory.StartNew((param) => ProcessData(param), context);
                     //await ProcessData(context);
-                    await m_ListenerTaskFactory.StartNew((param) => ProcessData(param), context).ConfigureAwait(false);
+                    m_ListenerTaskFactory.StartNew((param) => ProcessData(param), context);
                 }
                 else if (context != null)
                 {
