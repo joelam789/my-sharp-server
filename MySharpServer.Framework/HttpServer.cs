@@ -29,12 +29,11 @@ namespace MySharpServer.Framework
         protected ConcurrentExclusiveSchedulerPair m_TaskSchedulerPair = null;
         protected TaskFactory m_ListenerTaskFactory = null;
 
-        public static int ListenThreadCount = Environment.ProcessorCount * 2;
-
+        public static int ListenerWorkerThreadCount = Environment.ProcessorCount * 2;
 
         public HttpServer(IServerNode handler, IServerLogger logger = null, int flags = 0, string allowOrigin = "")
         {
-            m_TaskSchedulerPair = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default, ListenThreadCount);
+            m_TaskSchedulerPair = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default, ListenerWorkerThreadCount);
             m_ListenerTaskFactory = new TaskFactory(m_TaskSchedulerPair.ConcurrentScheduler);
 
             m_RequestHandler = handler;
