@@ -329,11 +329,12 @@ namespace MySharpServer.Framework
             base.OnDisconnect(session);
         }
 
-        public override void OnError(Session session, int errortype, string errormsg)
+        public override void OnError(Session session, int errortype, Exception error)
         {
-            base.OnError(session, errortype, errormsg);
+            base.OnError(session, errortype, error);
 
-            if (errormsg != null && errormsg.Length > 0) m_WebSocketServer.Logger.Error(errormsg);
+            if (Session.IsProcessError(errortype)) m_WebSocketServer.Logger.Error(error.ToString());
+            else m_WebSocketServer.Logger.Error(error.Message);
         }
 
         //public override int OnSend(Session session, object data)
@@ -362,7 +363,7 @@ namespace MySharpServer.Framework
         }
     }
 
-    public class WebSocketJsonCodec : SharpNetwork.SimpleWebSocket.IJsonCodec
+    public class WebSocketJsonCodec : ICommonJsonCodec
     {
         private NewtonJsonCodec m_JsonCodec = new NewtonJsonCodec();
 
