@@ -14,6 +14,8 @@ namespace MySharpServerExample.ServerService
         [Access(Name = "hello")]
         public async Task Hello(RequestContext ctx)
         {
+            //System.Diagnostics.Debugger.Break();
+
             string userName = ctx.Data.ToString();
             if (userName.Trim().Length <= 0)
             {

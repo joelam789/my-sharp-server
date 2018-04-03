@@ -45,6 +45,9 @@
     <Reference Include="SharpNetwork.Core">
       <HintPath>..\Lib\SharpNetwork.Core.dll</HintPath>
     </Reference>
+    <Reference Include="SharpNetwork.SimpleHttp">
+      <HintPath>..\Lib\SharpNetwork.SimpleHttp.dll</HintPath>
+    </Reference>
     <Reference Include="SharpNetwork.SimpleWebSocket">
       <HintPath>..\Lib\SharpNetwork.SimpleWebSocket.dll</HintPath>
     </Reference>
@@ -70,6 +73,8 @@
     <Compile Include="ServerNode.cs" />
     <Compile Include="ServiceRequestContext.cs" />
     <Compile Include="ServiceWrapper.cs" />
+    <Compile Include="SimpleHttpServer.cs" />
+    <Compile Include="SimpleHttpSession.cs" />
     <Compile Include="SimpleLocker.cs" />
     <Compile Include="WebSocketServer.cs" />
     <Compile Include="WebSocketSession.cs" />

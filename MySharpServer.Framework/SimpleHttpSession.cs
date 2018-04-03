@@ -6,20 +6,22 @@ using System.Text;
 using System.Threading.Tasks;
 
 using SharpNetwork.Core;
-using SharpNetwork.SimpleWebSocket;
+using SharpNetwork.SimpleHttp;
 
 using MySharpServer.Common;
 
 namespace MySharpServer.Framework
 {
-    public class WebSocketSession: IWebSession
+    public class SimpleHttpSession : IWebSession
     {
         private Session m_Session = null;
 
         private string m_Protocol = "";
         private string m_RemoteAddress = "";
 
-        public WebSocketSession(Session session)
+        private bool m_StartedResponse = false;
+
+        public SimpleHttpSession(Session session)
         {
             m_Session = session;
             GetRemoteAddress();
@@ -33,7 +35,7 @@ namespace MySharpServer.Framework
 
         public string GetGroup()
         {
-            return m_Session == null || m_Session.UserData == null ? "" : m_Session.UserData.ToString();
+            return "";
         }
 
         public string GetProtocol()
@@ -42,8 +44,8 @@ namespace MySharpServer.Framework
             {
                 if (m_Session != null)
                 {
-                    if (m_Session.GetStream() is SslStream) m_Protocol = "wss";
-                    else m_Protocol = "ws";
+                    if (m_Session.GetStream() is SslStream) m_Protocol = "https";
+                    else m_Protocol = "http";
                 }
             }
             return m_Protocol;
@@ -63,23 +65,30 @@ namespace MySharpServer.Framework
 
         public async Task Send(string msg, IDictionary<string, string> metadata = null)
         {
-           await Task.Run(() =>
-           {
-               if (m_Session != null)
-               {
-                   m_Session.Send(new WebMessage(msg));
-               }
-           }).ConfigureAwait(false);
+            await Task.Run(() =>
+            {
+                if (m_Session != null)
+                {
+                    HttpMessage.Send(m_Session, msg, metadata);
+                }
+            }).ConfigureAwait(false);
         }
 
         public void BeginResponse()
         {
-            // do nothing ...
+            m_StartedResponse = true;
         }
 
         public void EndResponse()
         {
-            // do nothing ...
+            if (!m_StartedResponse)
+            {
+                if (m_Session != null)
+                {
+                    m_StartedResponse = true;
+                    HttpMessage.Send(m_Session, "");
+                }
+            }
         }
 
         public void CloseConnection()

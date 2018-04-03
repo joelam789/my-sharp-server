@@ -27,7 +27,6 @@ namespace MySharpServer.Framework
         protected Dictionary<string, List<IWebSession>> m_ClientGroups = new Dictionary<string, List<IWebSession>>();
 
         public IServerNode RequestHandler { get; private set; }
-
         public IServerLogger Logger { get; private set; }
 
         public int Flags { get; private set; }
@@ -42,7 +41,7 @@ namespace MySharpServer.Framework
             Flags = flags;
 
             if (WebMessage.JsonCodec == WebMessage.DefaultJsonCodec)
-                WebMessage.JsonCodec = new WebSocketJsonCodec();
+                WebMessage.JsonCodec = new CommonJsonCodec();
         }
 
         public string AddClientSession(WebSocketSession session)
@@ -363,7 +362,7 @@ namespace MySharpServer.Framework
         }
     }
 
-    public class WebSocketJsonCodec : ICommonJsonCodec
+    public class CommonJsonCodec : ICommonJsonCodec
     {
         private NewtonJsonCodec m_JsonCodec = new NewtonJsonCodec();
 

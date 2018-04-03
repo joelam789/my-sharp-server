@@ -66,26 +66,40 @@ namespace MySharpServer.Framework
         {
             Stop();
 
-            if (!internalServerSetting.ServerProtocol.ToLower().Contains("http"))
+            string internalProtocol = internalServerSetting.WorkProtocol.ToLower();
+
+            if (!internalProtocol.Contains("http"))
             {
-                m_Logger.Error("Internal server supports only HTTP service");
+                m_Logger.Error("Internal server supports only HTTP listener");
                 return false;
-            }
-            if (internalServerSetting.ServerPort <= 0)
+            }  
+            if (internalServerSetting.WorkPort <= 0)
             {
-                m_Logger.Error("Invalid internal server port: " + internalServerSetting.ServerPort);
+                m_Logger.Error("Invalid internal server port: " + internalServerSetting.WorkPort);
                 return false;
             }
 
-            m_InternalServer = new HttpServer(this, m_Logger);
-
-            if (publicServerSetting != null && publicServerSetting.ServerPort > 0)
+            if (internalServerSetting != null && internalServerSetting.WorkPort > 0)
             {
-                if (publicServerSetting.ServerProtocol.ToLower().Contains("http"))
+                if (internalServerSetting.WorkProtocol.ToLower().Contains("simple-http"))
                 {
-                    m_PublicServer = new HttpServer(this, m_Logger, RequestContext.FLAG_PUBLIC, publicServerSetting.AllowOrigin);
+                    m_InternalServer = new SimpleHttpServer(this, m_Logger);
                 }
-                else if (publicServerSetting.ServerProtocol.ToLower().Contains("ws"))
+            }
+
+            if (m_InternalServer == null) m_InternalServer = new HttpServer(this, m_Logger);
+
+            if (publicServerSetting != null && publicServerSetting.WorkPort > 0)
+            {
+                if (publicServerSetting.WorkProtocol.ToLower().Contains("http"))
+                {
+                    if (publicServerSetting.WorkProtocol.ToLower().Contains("simple-http"))
+                    {
+                        m_PublicServer = new SimpleHttpServer(this, m_Logger, RequestContext.FLAG_PUBLIC, publicServerSetting.AllowOrigin);
+                    }
+                    if (m_PublicServer == null) m_PublicServer = new HttpServer(this, m_Logger, RequestContext.FLAG_PUBLIC, publicServerSetting.AllowOrigin);
+                }
+                else if (publicServerSetting.WorkProtocol.ToLower().Contains("ws"))
                 {
                     m_PublicServer = new WebSocketServer(this, m_Logger, RequestContext.FLAG_PUBLIC);
                 }
@@ -97,17 +111,18 @@ namespace MySharpServer.Framework
             if (m_InternalServer != null && internalServerSetting != null)
             {
                 string cert = internalServerSetting.CertFile;
-                if (internalServerSetting.ServerProtocol.ToLower().Contains("https"))
+                if (internalServerSetting.WorkProtocol.ToLower().Contains("https"))
                 {
                     // if need ssl then just do NOT let "cert" be empty, may set it with "https"
                     if (String.IsNullOrEmpty(cert)) cert = "https";
                 }
 
-                isInternalServerOK = m_InternalServer.Start(internalServerSetting.ServerPort, internalServerSetting.ServerIp,
+                isInternalServerOK = m_InternalServer.Start(internalServerSetting.WorkPort, internalServerSetting.WorkIp,
                                                             cert, internalServerSetting.CertKey);
                 if (isInternalServerOK)
                 {
-                    m_InternalUrl = m_InternalServer.GetProtocol() + @"://" + m_InternalServer.GetIp() + ":" + m_InternalServer.GetPort();
+                    if (internalServerSetting.AccessUrl.Length > 0) m_InternalUrl = internalServerSetting.AccessUrl;
+                    else m_InternalUrl = m_InternalServer.GetProtocol() + @"://" + m_InternalServer.GetIp() + ":" + m_InternalServer.GetPort();
                 }
                 else
                 {
@@ -128,32 +143,39 @@ namespace MySharpServer.Framework
                 m_UpdateRemoteServicesTimer = new Timer(UpdateRemoteServices, m_RemoteServices, 800, 1000 * 2);
             }
 
-            for (int i = 0; i < 20; i++) // try to wait till loading local services is done (max waiting time is 1000ms)
-            {
-                var svclist = m_LocalServices;
-                if (svclist == null || svclist.InternalServices == null || svclist.PublicServices == null
-                    || (svclist.InternalServices.Count <= 0 && svclist.PublicServices.Count <= 0))
-                {
-                    Thread.Sleep(50);
-                }
-                else break;
-            }
+            Thread.Sleep(100);
 
+            if (m_LocalServiceFiles.Count > 0)
+            {
+                for (int i = 0; i < 50; i++) // try to wait till loading local services is done (max waiting time is 5000ms)
+                {
+                    var svclist = m_LocalServices;
+                    if (svclist == null || svclist.InternalServices == null || svclist.PublicServices == null
+                        || (svclist.InternalServices.Count <= 0 && svclist.PublicServices.Count <= 0))
+                    {
+                        Thread.Sleep(100);
+                    }
+                    else break;
+                }
+            }
+            
             if (m_PublicServer != null && publicServerSetting != null)
             {
                 string cert = publicServerSetting.CertFile;
-                if (publicServerSetting.ServerProtocol.ToLower().Contains("https"))
+                if (publicServerSetting.WorkProtocol.ToLower().Contains("https"))
                 {
                     // if need ssl then just do NOT let "cert" be empty, may set it with "https"
                     if (String.IsNullOrEmpty(cert)) cert = "https";
                 }
 
-                isPublicServerOK = m_PublicServer.Start(publicServerSetting.ServerPort, publicServerSetting.ServerIp,
+                isPublicServerOK = m_PublicServer.Start(publicServerSetting.WorkPort, publicServerSetting.WorkIp,
                                                         cert, publicServerSetting.CertKey);
                 if (isPublicServerOK)
                 {
                     var protocol = m_PublicServer.GetProtocol();
-                    m_PublicUrl = protocol + @"://" + m_PublicServer.GetIp() + ":" + m_PublicServer.GetPort();
+
+                    if (publicServerSetting.AccessUrl.Length > 0) m_PublicUrl = publicServerSetting.AccessUrl;
+                    else m_PublicUrl = protocol + @"://" + m_PublicServer.GetIp() + ":" + m_PublicServer.GetPort();
 
                     if (protocol == "http") m_PublicProtocol = PROTOCOL_HTTP;
                     else if (protocol == "https") m_PublicProtocol = PROTOCOL_HTTPS;
@@ -513,7 +535,7 @@ namespace MySharpServer.Framework
             }
             catch (Exception ex)
             {
-                m_Logger.Error("Failed to update local service: " + ex.Message);
+                m_Logger.Error("Failed to update local services: " + ex.Message);
                 m_Logger.Error(ex.StackTrace);
             }
             finally
@@ -613,7 +635,7 @@ namespace MySharpServer.Framework
                     }
                 }
                 request.Session.BeginResponse();
-                if (result != null && result.Length > 0) await request.Session.Send(result);
+                await request.Session.Send(result == null ? "" : result);
                 request.Session.EndResponse();
             }
             else request.Session.EndResponse();

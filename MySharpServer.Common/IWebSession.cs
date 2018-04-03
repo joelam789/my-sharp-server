@@ -14,7 +14,7 @@ namespace MySharpServer.Common
         string GetRemoteAddress();
 
         void BeginResponse();
-        Task Send(string msg);
+        Task Send(string msg, IDictionary<string, string> metadata = null);
         void EndResponse();
 
         void CloseConnection();

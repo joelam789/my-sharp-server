@@ -7,11 +7,13 @@ namespace MySharpServer.Common
 {
     public class ServerSetting
     {
-        public string ServerIp { get; set; }
+        public string WorkIp { get; set; }
 
-        public int ServerPort { get; set; }
+        public int WorkPort { get; set; }
 
-        public string ServerProtocol { get; set; }
+        public string WorkProtocol { get; set; }
+
+        public string AccessUrl { get; set; }
 
         public string AllowOrigin { get; set; }
 
@@ -21,9 +23,11 @@ namespace MySharpServer.Common
 
         public ServerSetting()
         {
-            ServerIp = "0.0.0.0";
-            ServerProtocol = "http";
-            ServerPort = 9991;
+            WorkIp = "0.0.0.0";
+            WorkProtocol = "http";
+            WorkPort = 9991;
+
+            AccessUrl = "http://127.0.0.1:9991";
 
             AllowOrigin = "";
 

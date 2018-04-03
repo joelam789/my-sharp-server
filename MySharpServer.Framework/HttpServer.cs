@@ -17,14 +17,14 @@ namespace MySharpServer.Framework
         protected string m_Ip = "0.0.0.0"; // any ip
         protected string m_Protocol = "http";
         protected int m_Port = 9991;
-        protected int m_Flags = 0;
+
         protected HttpListener m_Server = null;
         protected Thread m_ListenerThread = null;
 
-        protected IServerNode m_RequestHandler = null;
-        protected IServerLogger m_Logger = null;
-
-        protected string m_AllowOrigin = "";
+        public IServerNode RequestHandler { get; private set; }
+        public IServerLogger Logger { get; private set; }
+        public string AllowOrigin { get; private set; }
+        public int Flags { get; private set; }
 
         protected ConcurrentExclusiveSchedulerPair m_TaskSchedulerPair = null;
         protected TaskFactory m_ListenerTaskFactory = null;
@@ -36,14 +36,14 @@ namespace MySharpServer.Framework
             m_TaskSchedulerPair = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default, ListenerWorkerThreadCount);
             m_ListenerTaskFactory = new TaskFactory(m_TaskSchedulerPair.ConcurrentScheduler);
 
-            m_RequestHandler = handler;
+            RequestHandler = handler;
 
-            m_Logger = logger;
-            if (m_Logger == null) m_Logger = new ConsoleLogger();
+            Logger = logger;
+            if (Logger == null) Logger = new ConsoleLogger();
 
-            m_Flags = flags;
+            Flags = flags;
 
-            if ((m_Flags & RequestContext.FLAG_PUBLIC) != 0) m_AllowOrigin = allowOrigin; // normally only public services need this
+            if ((Flags & RequestContext.FLAG_PUBLIC) != 0) AllowOrigin = allowOrigin; // normally only public services need this
         }
 
         public bool Start(int port = 0, string ipstr = "", string certFile = "", string certKey = "")
@@ -109,7 +109,7 @@ namespace MySharpServer.Framework
                     }
                     catch { }
                     m_Server = null;
-                    m_Logger.Error("HTTP listening error: " + ex.Message);
+                    Logger.Error("HTTP listening error: " + ex.Message);
                 }
             }
 
@@ -123,7 +123,7 @@ namespace MySharpServer.Framework
                 }
                 catch { }
                 m_Server = null;
-                m_Logger.Error("Failed to start server.");
+                Logger.Error("Failed to start server.");
             }
 
             return isServerOK;
@@ -157,7 +157,7 @@ namespace MySharpServer.Framework
             }
             catch (Exception ex)
             {
-                m_Logger.Error("HTTP context error: " + ex.Message);
+                Logger.Error("HTTP context error: " + ex.Message);
                 return;
             }
 
@@ -177,7 +177,7 @@ namespace MySharpServer.Framework
             }
             catch (Exception ex)
             {
-                m_Logger.Error("HTTP process error: " + ex.Message);
+                Logger.Error("HTTP process error: " + ex.Message);
             }
         }
 
@@ -185,7 +185,7 @@ namespace MySharpServer.Framework
         {
             HttpListenerContext ctx = obj as HttpListenerContext;
             if (ctx == null) return;
-            if (m_RequestHandler == null) return;
+            if (RequestHandler == null) return;
             try
             {
                 var request = ctx.Request;
@@ -194,11 +194,11 @@ namespace MySharpServer.Framework
                 {
                     content += (content.EndsWith("/") ? "" : "/") + (await reader.ReadToEndAsync());
                 }
-                m_RequestHandler.HandleRequest(new RequestContext(new HttpSession(ctx, m_AllowOrigin), content, m_Flags));
+                RequestHandler.HandleRequest(new RequestContext(new HttpSession(ctx, AllowOrigin), content, Flags));
             }
             catch (Exception ex)
             {
-                m_Logger.Error("HTTP context error: " + ex.Message);
+                Logger.Error("HTTP context error: " + ex.Message);
             }
         }
 
