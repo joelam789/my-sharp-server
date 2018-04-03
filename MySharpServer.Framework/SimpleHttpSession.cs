@@ -19,7 +19,7 @@ namespace MySharpServer.Framework
         private string m_Protocol = "";
         private string m_RemoteAddress = "";
 
-        private bool m_StartedResponse = false;
+        private bool m_HasSentSomething = false;
 
         public SimpleHttpSession(Session session)
         {
@@ -69,6 +69,7 @@ namespace MySharpServer.Framework
             {
                 if (m_Session != null)
                 {
+                    m_HasSentSomething = true;
                     HttpMessage.Send(m_Session, msg, metadata);
                 }
             }).ConfigureAwait(false);
@@ -76,16 +77,16 @@ namespace MySharpServer.Framework
 
         public void BeginResponse()
         {
-            m_StartedResponse = true;
+            // do nothing
         }
 
         public void EndResponse()
         {
-            if (!m_StartedResponse)
+            if (!m_HasSentSomething)
             {
                 if (m_Session != null)
                 {
-                    m_StartedResponse = true;
+                    m_HasSentSomething = true;
                     HttpMessage.Send(m_Session, "");
                 }
             }

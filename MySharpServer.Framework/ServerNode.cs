@@ -79,14 +79,10 @@ namespace MySharpServer.Framework
                 return false;
             }
 
-            if (internalServerSetting != null && internalServerSetting.WorkPort > 0)
+            if (internalServerSetting.WorkProtocol.ToLower().Contains("simple-http"))
             {
-                if (internalServerSetting.WorkProtocol.ToLower().Contains("simple-http"))
-                {
-                    m_InternalServer = new SimpleHttpServer(this, m_Logger);
-                }
+                m_InternalServer = new SimpleHttpServer(this, m_Logger);
             }
-
             if (m_InternalServer == null) m_InternalServer = new HttpServer(this, m_Logger);
 
             if (publicServerSetting != null && publicServerSetting.WorkPort > 0)
