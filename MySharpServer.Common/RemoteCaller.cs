@@ -89,7 +89,6 @@ namespace MySharpServer.Common
 
         public static async Task<string> RandomCall(Dictionary<string, List<string>> remoteServers, string service, string action, string data, int timeout = 0)
         {
-            string result = "";
             List<string> remoteServerList = null;
             if (remoteServers != null && remoteServers.TryGetValue(service, out remoteServerList))
             {
@@ -100,18 +99,11 @@ namespace MySharpServer.Common
                     {
                         string remoteUrl = remoteInfoParts[1]; // name | url | key
                         string svrKey = remoteInfoParts.Length >= 3 ? remoteInfoParts[2] : "";
-                        try
-                        {
-                            result = await Call(remoteUrl, service, action, data, svrKey, timeout);
-                        }
-                        catch
-                        {
-                            result = "";
-                        }
+                        return await Call(remoteUrl, service, action, data, svrKey, timeout);
                     }
                 }
             }
-            return result;
+            return "";
         }
     }
 }
