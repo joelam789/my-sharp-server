@@ -27,7 +27,7 @@ namespace MySharpServer.Common
             WorkProtocol = "http";
             WorkPort = 9991;
 
-            AccessUrl = "http://127.0.0.1:9991";
+            AccessUrl = "";
 
             AllowOrigin = "";
 

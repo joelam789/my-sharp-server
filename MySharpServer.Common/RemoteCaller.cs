@@ -12,8 +12,11 @@ namespace MySharpServer.Common
     {
         static RemoteCaller()
         {
+            DefaultTimeout = 30 * 1000; // 30 seconds
             HttpConnectionLimit = Environment.ProcessorCount * 8;
         }
+
+        public static int DefaultTimeout { get; set; }
 
         public static int HttpConnectionLimit
         {
@@ -33,7 +36,7 @@ namespace MySharpServer.Common
             httpWebRequest.ContentType = "text/plain";
             httpWebRequest.Method = "POST";
 
-            if (timeout > 0) httpWebRequest.Timeout = timeout;
+            httpWebRequest.Timeout = timeout > 0 ? timeout : DefaultTimeout;
 
             using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
             {
@@ -84,7 +87,7 @@ namespace MySharpServer.Common
             return await Call(server, service, action, data, key, timeout);
         }
 
-        public static async Task<string> RandomCall(Dictionary<string, List<string>> remoteServers, string service, string action, string data)
+        public static async Task<string> RandomCall(Dictionary<string, List<string>> remoteServers, string service, string action, string data, int timeout = 0)
         {
             string result = "";
             List<string> remoteServerList = null;
@@ -99,7 +102,7 @@ namespace MySharpServer.Common
                         string svrKey = remoteInfoParts.Length >= 3 ? remoteInfoParts[2] : "";
                         try
                         {
-                            result = await Call(remoteUrl, service, action, data, svrKey);
+                            result = await Call(remoteUrl, service, action, data, svrKey, timeout);
                         }
                         catch
                         {
