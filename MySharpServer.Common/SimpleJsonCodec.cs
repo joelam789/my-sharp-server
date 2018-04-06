@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Json;
@@ -18,6 +19,12 @@ namespace MySharpServer.Common
                 serializer.WriteObject(ms, obj);
                 return Encoding.UTF8.GetString(ms.ToArray());
             }
+        }
+
+        public object ToJsonObject(string str)
+        {
+            // should not work... may use JavaScriptSerializer, but need System.Web
+            return ToJsonObject<ExpandoObject>(str);
         }
 
         public T ToJsonObject<T>(string str) where T : class

@@ -8,6 +8,7 @@ namespace MySharpServer.Common
     public interface IJsonCodec
     {
         string ToJsonString(object obj);
+        object ToJsonObject(string str);
         T ToJsonObject<T>(string str) where T : class;
     }
 }
