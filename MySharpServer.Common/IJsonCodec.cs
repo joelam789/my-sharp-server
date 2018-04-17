@@ -10,5 +10,6 @@ namespace MySharpServer.Common
         string ToJsonString(object obj);
         object ToJsonObject(string str);
         T ToJsonObject<T>(string str) where T : class;
+        IDictionary<string, object> ToDictionary(string str);
     }
 }

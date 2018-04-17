@@ -13,7 +13,7 @@ namespace MySharpServer.Framework
 {
     public class NewtonJsonCodec : IJsonCodec
     {
-        //private ExpandoObjectConverter m_MapConverter = new ExpandoObjectConverter();
+        private ExpandoObjectConverter m_MapConverter = new ExpandoObjectConverter();
 
         public string ToJsonString(object obj)
         {
@@ -32,8 +32,23 @@ namespace MySharpServer.Framework
             {
                 if (!string.IsNullOrEmpty(str))
                 {
-                    //return JsonConvert.DeserializeObject<ExpandoObject>(str, m_MapConverter);
                     return JsonConvert.DeserializeObject(str);
+                }
+                else return null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public IDictionary<string, object> ToDictionary(string str)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(str))
+                {
+                    return JsonConvert.DeserializeObject<ExpandoObject>(str, m_MapConverter);
                 }
                 else return null;
             }

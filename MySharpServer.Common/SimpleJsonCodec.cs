@@ -27,6 +27,12 @@ namespace MySharpServer.Common
             return ToJsonObject<ExpandoObject>(str);
         }
 
+        public IDictionary<string, object> ToDictionary(string str)
+        {
+            // should not work either...
+            return ToJsonObject<ExpandoObject>(str);
+        }
+
         public T ToJsonObject<T>(string str) where T : class
         {
             if (str == null || str.Length <= 0) return null;
