@@ -33,6 +33,8 @@ namespace MySharpServer.Common
             HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest
                 .Create((url.StartsWith("http") ? url : ("http://" + url)) + (url.EndsWith("/") ? "" : "/") + path);
 
+            httpWebRequest.Accept = "*/*";
+            httpWebRequest.UserAgent = "curl/7.50.0";
             httpWebRequest.ContentType = "text/plain";
             httpWebRequest.Method = "POST";
 
