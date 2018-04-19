@@ -60,6 +60,9 @@ namespace MySharpServer.Framework
 
             m_Logger = logger;
             if (m_Logger == null) m_Logger = new ConsoleLogger();
+
+            if (RemoteCaller.JsonCodec == null || RemoteCaller.JsonCodec is SimpleJsonCodec)
+                RemoteCaller.JsonCodec = new NewtonJsonCodec();
         }
 
         public bool Start(ServerSetting internalServerSetting, ServerSetting publicServerSetting = null)

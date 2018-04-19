@@ -24,13 +24,15 @@ namespace MySharpServer.Common
         public object ToJsonObject(string str)
         {
             // should not work... may use JavaScriptSerializer, but need System.Web
-            return ToJsonObject<ExpandoObject>(str);
+            //return ToJsonObject<ExpandoObject>(str);
+            throw new Exception("ToJsonObject() is not supported in SimpleJsonCodec");
         }
 
         public IDictionary<string, object> ToDictionary(string str)
         {
             // should not work either...
-            return ToJsonObject<ExpandoObject>(str);
+            //return ToJsonObject<ExpandoObject>(str);
+            throw new Exception("ToDictionary() is not supported in SimpleJsonCodec");
         }
 
         public T ToJsonObject<T>(string str) where T : class

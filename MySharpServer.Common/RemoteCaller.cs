@@ -12,9 +12,12 @@ namespace MySharpServer.Common
     {
         static RemoteCaller()
         {
-            DefaultTimeout = 30 * 1000; // 30 seconds
+            JsonCodec = new SimpleJsonCodec();
+            DefaultTimeout = 10 * 1000; // 10 seconds
             HttpConnectionLimit = Environment.ProcessorCount * 8;
         }
+
+        public static IJsonCodec JsonCodec { get; set; }
 
         public static int DefaultTimeout { get; set; }
 
@@ -24,9 +27,134 @@ namespace MySharpServer.Common
             set { ServicePointManager.DefaultConnectionLimit = value; }
         }
 
+        public static async Task<object> Request(string url, object param, int timeout = 0)
+        {
+            return await Request(url, param, null, timeout);
+        }
+
+        public static async Task<T> Request<T>(string url, object param, int timeout = 0) where T : class
+        {
+            return await Request<T>(url, param, null, timeout);
+        }
+
+        public static async Task<object> Request(string url, object param, IDictionary<string, string> headers, int timeout = 0)
+        {
+            dynamic result = null;
+            string input = null;
+
+            HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(url);
+
+            if (param == null) httpWebRequest.Method = "GET";
+            else
+            {
+                if (param is string) input = param.ToString();
+                else input = JsonCodec.ToJsonString(param);
+
+                if (input == null) input = param.ToString();
+                httpWebRequest.Method = "POST";
+            }
+
+            if (headers != null)
+            {
+                foreach (var item in headers) httpWebRequest.Headers.Add(item.Key, item.Value);
+                if (!headers.ContainsKey("Accept")) httpWebRequest.Accept = "*/*";
+                if (!headers.ContainsKey("UserAgent")) httpWebRequest.UserAgent = "curl/7.50.0";
+                if (param != null && !headers.ContainsKey("ContentType")) httpWebRequest.ContentType = "text/plain";
+            }
+            else
+            {
+                httpWebRequest.Accept = "*/*";
+                httpWebRequest.UserAgent = "curl/7.50.0";
+                if (param != null) httpWebRequest.ContentType = "text/plain";
+            }
+
+            httpWebRequest.Timeout = timeout > 0 ? timeout : DefaultTimeout;
+
+            if (input != null)
+            {
+                using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
+                {
+                    await streamWriter.WriteAsync(input);
+                    await streamWriter.FlushAsync();
+                    streamWriter.Close();
+                }
+            }
+
+            using (var response = await httpWebRequest.GetResponseAsync())
+            {
+                using (StreamReader streamReader = new StreamReader(response.GetResponseStream()))
+                {
+                    string responseJson = await streamReader.ReadToEndAsync();
+                    result = JsonCodec.ToJsonObject(responseJson);
+                    if (result == null) result = responseJson;
+                    streamReader.Close();
+                }
+            }
+
+            return result;
+        }
+
+        public static async Task<T> Request<T>(string url, object param, IDictionary<string, string> headers, int timeout = 0) where T : class
+        {
+            T result = null;
+            string input = null;
+
+            HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(url);
+
+            if (param == null) httpWebRequest.Method = "GET";
+            else
+            {
+                if (param is string) input = param.ToString();
+                else input = JsonCodec.ToJsonString(param);
+
+                if (input == null) input = param.ToString();
+                httpWebRequest.Method = "POST";
+            }
+
+            if (headers != null)
+            {
+                foreach (var item in headers) httpWebRequest.Headers.Add(item.Key, item.Value);
+                if (!headers.ContainsKey("Accept")) httpWebRequest.Accept = "*/*";
+                if (!headers.ContainsKey("UserAgent")) httpWebRequest.UserAgent = "curl/7.50.0";
+                if (param != null && !headers.ContainsKey("ContentType")) httpWebRequest.ContentType = "text/plain";
+            }
+            else
+            {
+                httpWebRequest.Accept = "*/*";
+                httpWebRequest.UserAgent = "curl/7.50.0";
+                if (param != null) httpWebRequest.ContentType = "text/plain";
+            }
+
+            httpWebRequest.Timeout = timeout > 0 ? timeout : DefaultTimeout;
+
+            if (input != null)
+            {
+                using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
+                {
+                    await streamWriter.WriteAsync(input);
+                    await streamWriter.FlushAsync();
+                    streamWriter.Close();
+                }
+            }
+
+            using (var response = await httpWebRequest.GetResponseAsync())
+            {
+                using (StreamReader streamReader = new StreamReader(response.GetResponseStream()))
+                {
+                    string responseJson = await streamReader.ReadToEndAsync();
+                    result = JsonCodec.ToJsonObject<T>(responseJson);
+                    streamReader.Close();
+                }
+            }
+
+            return result;
+        }
+
         public static async Task<string> Call(string url, string service, string action, string data, string key = "", int timeout = 0)
         {
             string result = "";
+
+            string input = data == null ? "" : data;
 
             string path = service + "/" + action + (key.Length > 0 ? ("/" + key) : "");
 
@@ -42,7 +170,7 @@ namespace MySharpServer.Common
 
             using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
             {
-                await streamWriter.WriteAsync(data);
+                await streamWriter.WriteAsync(input);
                 await streamWriter.FlushAsync();
                 streamWriter.Close();
             }
