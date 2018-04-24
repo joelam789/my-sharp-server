@@ -39,59 +39,7 @@ namespace MySharpServer.Common
 
         public static async Task<object> Request(string url, object param, IDictionary<string, string> headers, int timeout = 0)
         {
-            dynamic result = null;
-            string input = null;
-
-            HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(url);
-
-            if (param == null) httpWebRequest.Method = "GET";
-            else
-            {
-                if (param is string) input = param.ToString();
-                else input = JsonCodec.ToJsonString(param);
-
-                if (input == null) input = param.ToString();
-                httpWebRequest.Method = "POST";
-            }
-
-            if (headers != null)
-            {
-                foreach (var item in headers) httpWebRequest.Headers.Add(item.Key, item.Value);
-                if (!headers.ContainsKey("Accept")) httpWebRequest.Accept = "*/*";
-                if (!headers.ContainsKey("UserAgent")) httpWebRequest.UserAgent = "curl/7.50.0";
-                if (param != null && !headers.ContainsKey("ContentType")) httpWebRequest.ContentType = "text/plain";
-            }
-            else
-            {
-                httpWebRequest.Accept = "*/*";
-                httpWebRequest.UserAgent = "curl/7.50.0";
-                if (param != null) httpWebRequest.ContentType = "text/plain";
-            }
-
-            httpWebRequest.Timeout = timeout > 0 ? timeout : DefaultTimeout;
-
-            if (input != null)
-            {
-                using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
-                {
-                    await streamWriter.WriteAsync(input);
-                    await streamWriter.FlushAsync();
-                    streamWriter.Close();
-                }
-            }
-
-            using (var response = await httpWebRequest.GetResponseAsync())
-            {
-                using (StreamReader streamReader = new StreamReader(response.GetResponseStream()))
-                {
-                    string responseJson = await streamReader.ReadToEndAsync();
-                    result = JsonCodec.ToJsonObject(responseJson);
-                    if (result == null) result = responseJson;
-                    streamReader.Close();
-                }
-            }
-
-            return result;
+            return JsonCodec.ToJsonObject(await Request<string>(url, param, headers, timeout));
         }
 
         public static async Task<T> Request<T>(string url, object param, IDictionary<string, string> headers, int timeout = 0) where T : class
@@ -141,8 +89,11 @@ namespace MySharpServer.Common
             {
                 using (StreamReader streamReader = new StreamReader(response.GetResponseStream()))
                 {
-                    string responseJson = await streamReader.ReadToEndAsync();
-                    result = JsonCodec.ToJsonObject<T>(responseJson);
+                    string responseString = await streamReader.ReadToEndAsync();
+                    var expectedType = typeof(T);
+                    if (expectedType == typeof(string)) result = responseString as T;
+                    else if (expectedType == typeof(IDictionary<string, object>)) result = JsonCodec.ToDictionary(responseString) as T;
+                    else result = JsonCodec.ToJsonObject<T>(responseString);
                     streamReader.Close();
                 }
             }
