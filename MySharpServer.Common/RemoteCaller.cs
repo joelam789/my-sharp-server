@@ -85,7 +85,7 @@ namespace MySharpServer.Common
                 }
             }
 
-            using (var response = await httpWebRequest.GetResponseAsync())
+            using (var response = await TryToGetResponse(httpWebRequest))
             {
                 using (StreamReader streamReader = new StreamReader(response.GetResponseStream()))
                 {
@@ -126,7 +126,7 @@ namespace MySharpServer.Common
                 streamWriter.Close();
             }
 
-            using (var response = await httpWebRequest.GetResponseAsync())
+            using (var response = await TryToGetResponse(httpWebRequest))
             {
                 using (StreamReader streamReader = new StreamReader(response.GetResponseStream()))
                 {
@@ -136,6 +136,28 @@ namespace MySharpServer.Common
             }
 
             return result;
+        }
+
+        public static async Task<WebResponse> TryToGetResponse(HttpWebRequest request)
+        {
+            if (request == null)
+            {
+                throw new ArgumentNullException("HttpWebRequest");
+            }
+
+            WebResponse response = null;
+
+            try
+            {
+                response = await request.GetResponseAsync();
+            }
+            catch (WebException ex)
+            {
+                response = ex.Response;
+                if (response == null) throw;
+            }
+
+            return response;
         }
 
         public static async Task<string> GroupClient(string server, string key, string client, string group, int timeout = 0)
