@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CacheManager.Core" Version="1.2.0" />
+    <PackageReference Include="CacheManager.Microsoft.Extensions.Configuration" Version="1.2.0" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.2.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
+    <PackageReference Include="NLog" Version="4.6.3" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="4.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MySharpServer.Common\MySharpServer.Common.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="SharpNetwork.Core">
+      <HintPath>..\Lib\SharpNetwork.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpNetwork.SimpleHttp">
+      <HintPath>..\Lib\SharpNetwork.SimpleHttp.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpNetwork.SimpleWebSocket">
+      <HintPath>..\Lib\SharpNetwork.SimpleWebSocket.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
