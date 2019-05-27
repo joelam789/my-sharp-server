@@ -151,6 +151,7 @@ namespace MySharpServer.Framework
 
         public void RefreshCacheSettings(string cacheConfigSection = "")
         {
+            /*
             try
             {
                 ConfigurationManager.RefreshSection(CacheProvider.CACHE_SECTION_NAME);
@@ -158,6 +159,7 @@ namespace MySharpServer.Framework
                     ConfigurationManager.RefreshSection(cacheConfigSection);
             }
             catch { }
+            */
 
             m_CacheProvider.Refresh();
         }

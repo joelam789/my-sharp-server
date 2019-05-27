@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Configuration;
 using System.Data;
 using System.Data.Common;
@@ -8,6 +9,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 
 namespace MySharpServer.Framework
 {
@@ -39,6 +41,7 @@ namespace MySharpServer.Framework
 
             if (factory == null)
             {
+                /*
                 DataSet section = ConfigurationManager.GetSection(DB_PROVIDER_SECTION) as DataSet;
                 if (section != null)
                 {
@@ -56,6 +59,71 @@ namespace MySharpServer.Framework
                         }
                     }
                 }
+                */
+
+                try
+                {
+                    string folder = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
+                    if (folder == null || folder.Trim().Length <= 0)
+                    {
+                        var entry = Assembly.GetEntryAssembly();
+                        var location = "";
+                        try
+                        {
+                            if (entry != null) location = entry.Location;
+                        }
+                        catch { }
+                        if (location != null && location.Length > 0)
+                        {
+                            folder = Path.GetDirectoryName(location);
+                        }
+                    }
+                    if (folder == null || folder.Trim().Length <= 0) folder = "";
+
+                    XmlDocument xmlDoc = new XmlDocument();
+
+                    var configFilepath = folder + "/" + AppDomain.CurrentDomain.FriendlyName;
+
+                    if (File.Exists(configFilepath + ".exe.config")) configFilepath += ".exe.config";
+                    else if (File.Exists(configFilepath + ".dll.config")) configFilepath += ".dll.config";
+                    else configFilepath += ".config";
+
+                    xmlDoc.Load(configFilepath);
+
+                    foreach (XmlElement element in xmlDoc.DocumentElement)
+                    {
+                        if (element.Name.Equals("system.data"))
+                        {
+                            foreach (XmlNode node in element.ChildNodes)
+                            {
+                                if (node.Name.Equals("DbProviderFactories"))
+                                {
+                                    foreach (XmlNode subnode in node.ChildNodes)
+                                    {
+                                        if (subnode.Name.Equals("add"))
+                                        {
+                                            var attrItem = subnode.Attributes.GetNamedItem("name") as XmlAttribute;
+                                            var providerName = attrItem == null ? "" : attrItem.Value;
+                                            if (cnnstr.ProviderName.Equals(providerName))
+                                            {
+                                                //factory = DbProviderFactories.GetFactory(row);
+
+                                                attrItem = subnode.Attributes.GetNamedItem("invariant") as XmlAttribute;
+                                                var providerClass = attrItem == null ? providerName : attrItem.Value;
+
+                                                factory = DbHelperFunc.GetDbProviderFactory(providerClass);
+                                            }
+                                            if (factory != null) break;
+                                        }
+                                    }
+                                }
+                                if (factory != null) break;
+                            }
+                        }
+                        if (factory != null) break;
+                    }
+                }
+                catch { }
             }
 
             if (factory != null && cnnstr != null)
@@ -239,15 +307,15 @@ namespace MySharpServer.Framework
 
         public static DbProviderFactory GetDbProviderFactory(string providerName)
         {
-            var providername = providerName.ToLower();
+            var dbProviderName = providerName.ToLower();
 
-            if (providerName == "system.data.sqlclient")
+            if (dbProviderName == "system.data.sqlclient")
                 return GetDbProviderFactory(DataAccessProviderTypes.SqlServer);
-            if (providerName == "system.data.sqlite" || providerName == "microsoft.data.sqlite")
+            if (dbProviderName == "system.data.sqlite" || dbProviderName == "microsoft.data.sqlite")
                 return GetDbProviderFactory(DataAccessProviderTypes.SqLite);
-            if (providerName == "mysql.data.mysqlclient" || providername == "mysql.data")
+            if (dbProviderName == "mysql.data.mysqlclient" || dbProviderName == "mysql.data")
                 return GetDbProviderFactory(DataAccessProviderTypes.MySql);
-            if (providerName == "npgsql")
+            if (dbProviderName == "npgsql")
                 return GetDbProviderFactory(DataAccessProviderTypes.PostgreSql);
 
             throw new NotSupportedException("Unsupported Provider Factory: " + providerName);
