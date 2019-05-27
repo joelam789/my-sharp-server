@@ -1,0 +1,32 @@
+{
+  "$schema": "http://cachemanager.michaco.net/schemas/cachemanager.json#",
+  "redis": [
+    {
+      "key": "redisConnection",
+      "connectionString": "192.168.0.111:6379"
+    }
+  ],
+  "cacheManagers": [
+    {
+      "maxRetries": 1000,
+      "name": "cache",
+      "retryTimeout": 100,
+      "backplane": {
+        "key": "redisConnection",
+        "knownType": "Redis"
+      },
+      "serializer": {
+        "knownType": "Json"
+      },
+      "handles": [
+        {
+          "knownType": "Redis",
+          "key": "redisConnection",
+          "expirationMode": "Sliding",
+          "expirationTimeout": "0:0:23",
+          "isBackplaneSource": true
+        }
+      ]
+    }
+  ]
+}
