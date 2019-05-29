@@ -90,9 +90,10 @@ namespace MySharpServer.Framework
 
                     xmlDoc.Load(configFilepath);
 
-                    foreach (XmlElement element in xmlDoc.DocumentElement)
+                    foreach (var ele in xmlDoc.DocumentElement)
                     {
-                        if (element.Name.Equals("system.data"))
+                        XmlElement element = ele as XmlElement;
+                        if (element != null && element.Name.Equals("system.data"))
                         {
                             foreach (XmlNode node in element.ChildNodes)
                             {
@@ -179,6 +180,7 @@ namespace MySharpServer.Framework
             SqlServer,
             SqLite,
             MySql,
+            MySqlConnector, // https://mysql-net.github.io/MySqlConnector
             PostgreSql,
         }
 
@@ -292,6 +294,8 @@ namespace MySharpServer.Framework
                 return GetDbProviderFactory("Microsoft.Data.Sqlite.SqliteFactory", "Microsoft.Data.Sqlite");
             if (type == DataAccessProviderTypes.MySql)
                 return GetDbProviderFactory("MySql.Data.MySqlClient.MySqlClientFactory", "MySql.Data");
+            if (type == DataAccessProviderTypes.MySqlConnector)
+                return GetDbProviderFactory("MySql.Data.MySqlClient.MySqlClientFactory", "MySqlConnector");
             if (type == DataAccessProviderTypes.PostgreSql)
                 return GetDbProviderFactory("Npgsql.NpgsqlFactory", "Npgsql");
 
@@ -315,6 +319,8 @@ namespace MySharpServer.Framework
                 return GetDbProviderFactory(DataAccessProviderTypes.SqLite);
             if (dbProviderName == "mysql.data.mysqlclient" || dbProviderName == "mysql.data")
                 return GetDbProviderFactory(DataAccessProviderTypes.MySql);
+            if (dbProviderName == "mysqlconnector")
+                return GetDbProviderFactory(DataAccessProviderTypes.MySqlConnector);
             if (dbProviderName == "npgsql")
                 return GetDbProviderFactory(DataAccessProviderTypes.PostgreSql);
 
