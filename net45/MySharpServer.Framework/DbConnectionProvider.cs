@@ -61,7 +61,7 @@ namespace MySharpServer.Framework
             }
         }
 
-        public IDbConnection OpenDbConnection()
+        public IDbConnection OpenDbConnection(string specifiedCnnStr = "")
         {
             // thread-safe (reads and writes of reference types are atomic)
             DbConnectionConfig config = m_Config;
@@ -75,7 +75,8 @@ namespace MySharpServer.Framework
                 conn = factory.CreateConnection();
                 if (conn != null)
                 {
-                    conn.ConnectionString = cnnstr.ConnectionString;
+                    conn.ConnectionString = String.IsNullOrEmpty(specifiedCnnStr) 
+                                                ? cnnstr.ConnectionString : specifiedCnnStr;
                     conn.Open();
                 }
             }

@@ -102,7 +102,7 @@ namespace MySharpServer.Framework
             if (!reloadedConfig) foreach (var item in m_DbCnnProviders) item.Value.RefreshSetting(); // refresh existing providers
         }
 
-        public IDbConnection OpenDatabase(string cnnStrName = "")
+        public IDbConnection OpenDatabase(string cnnStrName = "", string specifiedCnnStr = "")
         {
             var targetName = cnnStrName;
             if (targetName == null || targetName.Length <= 0) targetName = DefaultDatabaseName;
@@ -112,7 +112,7 @@ namespace MySharpServer.Framework
             var providers = m_DbCnnProviders; // thread-safe (reads and writes of reference types are atomic)
             if (providers.TryGetValue(targetName, out provider))
             {
-                if (provider != null) cnn = provider.OpenDbConnection();
+                if (provider != null) cnn = provider.OpenDbConnection(specifiedCnnStr);
             }
 
             if (cnn == null) throw new Exception("Failed to open database: " + targetName);

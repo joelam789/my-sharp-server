@@ -10,7 +10,7 @@ namespace MySharpServer.Common
 {
     public interface IDataAccessHelper
     {
-        IDbConnection OpenDatabase(string cnnStrName);
+        IDbConnection OpenDatabase(string cnnStrName = "", string specifiedCnnStr = "");
         IDataParameter AddParam(IDbCommand cmd, string paramName, object paramValue);
 
         void RefreshDatabaseSettings(string dbConfigSection = "");
