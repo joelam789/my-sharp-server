@@ -63,6 +63,17 @@ namespace MySharpServer.Framework
             return m_RemoteAddress;
         }
 
+        public IDictionary<string, string> GetHeaders()
+        {
+            IDictionary<string, string> headers = null;
+            if (m_Session != null)
+            {
+                var reqHeaders = HttpMessage.GetIncomingHeaders(m_Session);
+                if (reqHeaders != null) headers = new Dictionary<string, string>(reqHeaders);
+            }
+            return headers;
+        }
+
         public async Task Send(string msg, IDictionary<string, string> metadata = null)
         {
             await Task.Run(() =>

@@ -60,6 +60,21 @@ namespace MySharpServer.Framework
             return m_RemoteAddress;
         }
 
+        public IDictionary<string, string> GetHeaders()
+        {
+            IDictionary<string, string> headers = null;
+            if (m_Session != null)
+            {
+                headers = new Dictionary<string, string>();
+                string[] keys = m_Session.Request.Headers.AllKeys;
+                foreach (var key in keys)
+                {
+                    headers.Add(key, m_Session.Request.Headers[key]);
+                }
+            }
+            return headers;
+        }
+
         public void BeginResponse()
         {
             if (m_Session != null)
