@@ -10,16 +10,28 @@ namespace MySharpServer.Common
 {
     public interface IDataAccessHelper
     {
-        IDbConnection OpenDatabase(string cnnStrName = "", string specifiedCnnStr = "");
+        IDbConnection OpenDatabase(string dbName = "");
         IDataParameter AddParam(IDbCommand cmd, string paramName, object paramValue);
 
-        void RefreshDatabaseSettings(string dbConfigSection = "");
+        void RefreshDatabaseSettings(string configLocation = "");
 
-        ICacheManager<object> OpenCache(string cacheName);
+        ICacheManager<object> OpenCache(string cacheName = "");
 
         ISimpleLocker Lock(ICacheManager<object> cache, string key, int lifetimeSeconds = 10);
         ISimpleLocker Lock(ICacheManager<object> cache, string key, string region, int lifetimeSeconds = 10);
 
-        void RefreshCacheSettings(string cacheConfigSection = "");
+        void RefreshCacheSettings(string configLocation = "");
+    }
+
+    public interface IDbConnectionStringLoader
+    {
+        List<string> Reload();
+        string GetConnectionString(string cnnStrName = "");
+    }
+
+    public interface ICacheConfigLoader
+    {
+        List<string> Reload();
+        ICacheManagerConfiguration GetCacheConfig(string cacheName = "");
     }
 }

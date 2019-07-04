@@ -37,7 +37,7 @@ namespace MySharpServer.Framework
             RefreshDatabaseSettings();
         }
 
-        public void RefreshDatabaseSettings(string dbConfigSection = "")
+        public void RefreshDatabaseSettings(string configLocation = "")
         {
             /*
             // try to reload configuration file.
@@ -76,35 +76,41 @@ namespace MySharpServer.Framework
             catch { }
             */
 
-            bool reloadedConfig = false;
-            try
+            lock (m_DbCnnProviders)
             {
-                ConfigurationManager.RefreshSection(DbConnectionProvider.DB_PROVIDER_SECTION);
-                ConfigurationManager.RefreshSection(CNN_STRING_SECTION);
+                if (DataConfigHelper.DbConnectionStringLoader != null)
+                    DataConfigHelper.DbConnectionStringLoader.Reload();
 
-                if (dbConfigSection != null && dbConfigSection.Length > 0)
-                    ConfigurationManager.RefreshSection(dbConfigSection);
-
-                var providers = new Dictionary<string, DbConnectionProvider>();
-                var cnnStringSection = ConfigurationManager.ConnectionStrings;
-                foreach (var item in cnnStringSection)
+                bool reloadedConfig = false;
+                try
                 {
-                    ConnectionStringSettings cnnstr = item as ConnectionStringSettings;
-                    if (cnnstr != null && !providers.ContainsKey(cnnstr.Name))
-                        providers.Add(cnnstr.Name, new DbConnectionProvider(cnnstr.Name));
-                }
-                m_DbCnnProviders = providers; // thread-safe (reads and writes of reference types are atomic)
-                reloadedConfig = true;
-                
-            }
-            catch { }
+                    ConfigurationManager.RefreshSection(DbConnectionProvider.DB_PROVIDER_SECTION);
+                    ConfigurationManager.RefreshSection(CNN_STRING_SECTION);
 
-            if (!reloadedConfig) foreach (var item in m_DbCnnProviders) item.Value.RefreshSetting(); // refresh existing providers
+                    if (configLocation != null && configLocation.Length > 0)
+                        ConfigurationManager.RefreshSection(configLocation);
+
+                    var providers = new Dictionary<string, DbConnectionProvider>();
+                    var cnnStringSection = ConfigurationManager.ConnectionStrings;
+                    foreach (var item in cnnStringSection)
+                    {
+                        ConnectionStringSettings cnnstr = item as ConnectionStringSettings;
+                        if (cnnstr != null && !providers.ContainsKey(cnnstr.Name))
+                            providers.Add(cnnstr.Name, new DbConnectionProvider(cnnstr.Name));
+                    }
+                    m_DbCnnProviders = providers; // thread-safe (reads and writes of reference types are atomic)
+                    reloadedConfig = true;
+
+                }
+                catch { }
+
+                if (!reloadedConfig) foreach (var item in m_DbCnnProviders) item.Value.RefreshSetting(); // refresh existing providers
+            }
         }
 
-        public IDbConnection OpenDatabase(string cnnStrName = "", string specifiedCnnStr = "")
+        public IDbConnection OpenDatabase(string dbName = "")
         {
-            var targetName = cnnStrName;
+            var targetName = dbName;
             if (targetName == null || targetName.Length <= 0) targetName = DefaultDatabaseName;
 
             IDbConnection cnn = null;
@@ -112,7 +118,7 @@ namespace MySharpServer.Framework
             var providers = m_DbCnnProviders; // thread-safe (reads and writes of reference types are atomic)
             if (providers.TryGetValue(targetName, out provider))
             {
-                if (provider != null) cnn = provider.OpenDbConnection(specifiedCnnStr);
+                if (provider != null) cnn = provider.OpenDbConnection();
             }
 
             if (cnn == null) throw new Exception("Failed to open database: " + targetName);
@@ -149,7 +155,7 @@ namespace MySharpServer.Framework
             return new SimpleLocker(cache, key, region, lifetimeSeconds);
         }
 
-        public void RefreshCacheSettings(string cacheConfigSection = "")
+        public void RefreshCacheSettings(string configLocation = "")
         {
             /*
             try
@@ -161,7 +167,10 @@ namespace MySharpServer.Framework
             catch { }
             */
 
-            m_CacheProvider.Refresh();
+            lock (m_CacheProvider)
+            {
+                m_CacheProvider.Refresh();
+            }
         }
 
         //public static RetryPolicy GetRetryPolicy(int retryTimes = 5, int retryIntervalMS = 1500)
@@ -208,5 +217,16 @@ namespace MySharpServer.Framework
     }
     */
 
+    public static class DataConfigHelper
+    {
+        public static IDbConnectionStringLoader DbConnectionStringLoader { get; set; }
+        public static ICacheConfigLoader CacheConfigLoader { get; set; }
+
+        static DataConfigHelper()
+        {
+            DbConnectionStringLoader = new DbConnectionStringLoader();
+            CacheConfigLoader = new CacheConfigLoader();
+        }
+    }
 }
 

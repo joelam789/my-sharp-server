@@ -7,6 +7,8 @@ using System.Text;
 using CacheManager.Core;
 using CacheManager.Core.Configuration;
 
+using MySharpServer.Common;
+
 namespace MySharpServer.Framework
 {
     public class CacheProvider
@@ -22,6 +24,9 @@ namespace MySharpServer.Framework
 
         public void Refresh()
         {
+            if (DataConfigHelper.CacheConfigLoader != null)
+                DataConfigHelper.CacheConfigLoader.Reload();
+
             Dictionary<string, ICacheManager<object>> mgrs = new Dictionary<string,ICacheManager<object>>();
 
             CacheManagerSection section = ConfigurationManager.GetSection(CACHE_SECTION_NAME) as CacheManagerSection;
@@ -30,8 +35,15 @@ namespace MySharpServer.Framework
             {
                 foreach (var item in section.CacheManagers)
                 {
+                    ICacheManagerConfiguration cfg = null;
+                    if (DataConfigHelper.CacheConfigLoader != null)
+                        cfg = DataConfigHelper.CacheConfigLoader.GetCacheConfig(item.Name);
+
                     if (mgrs.ContainsKey(item.Name)) mgrs.Remove(item.Name);
-                    var cache = CacheFactory.FromConfiguration<object>(item.Name);
+
+                    var cache = cfg == null ? CacheFactory.FromConfiguration<object>(item.Name) 
+                                            : CacheFactory.FromConfiguration<object>(item.Name, cfg);
+
                     if (cache != null) mgrs.Add(item.Name, cache);
                 }
             }

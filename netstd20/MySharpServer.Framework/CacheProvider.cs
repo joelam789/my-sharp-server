@@ -7,7 +7,12 @@ using System.Text;
 
 using CacheManager.Core;
 //using CacheManager.Core.Configuration;
+
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Primitives;
+
+using MySharpServer.Common;
 
 namespace MySharpServer.Framework
 {
@@ -41,20 +46,36 @@ namespace MySharpServer.Framework
             }
             */
 
-            var config = new Microsoft.Extensions.Configuration.ConfigurationBuilder()
+            if (DataConfigHelper.CacheConfigLoader != null)
+            {
+                var cacheNames = DataConfigHelper.CacheConfigLoader.Reload();
+                foreach (var cacheName in cacheNames)
+                {
+                    string itemName = cacheName;
+                    var cacheConfiguration = DataConfigHelper.CacheConfigLoader.GetCacheConfig(itemName);
+                    if (mgrs.ContainsKey(itemName)) mgrs.Remove(itemName);
+                    var cache = CacheFactory.FromConfiguration<object>(cacheConfiguration);
+                    if (cache != null) mgrs.Add(itemName, cache);
+                }
+            }
+            else
+            {
+                var config = new Microsoft.Extensions.Configuration.ConfigurationBuilder()
                 //.SetBasePath(Directory.GetCurrentDirectory()) // Directory where the json files are located
                 .AddJsonFile(CACHE_CONFIG_FILE, optional: false, reloadOnChange: true)
                 .Build();
 
-            var managerSections = config.GetSection(CACHE_SECTION_NAME).GetChildren();
-            foreach (var managerSection in managerSections)
-            {
-                string itemName = managerSection["name"];
-                var cacheConfiguration = config.GetCacheConfiguration(itemName);
+                var managerSections = config.GetSection(CACHE_SECTION_NAME).GetChildren();
+                foreach (var managerSection in managerSections)
+                {
+                    string itemName = managerSection["name"];
 
-                if (mgrs.ContainsKey(itemName)) mgrs.Remove(itemName);
-                var cache = CacheFactory.FromConfiguration<object>(cacheConfiguration);
-                if (cache != null) mgrs.Add(itemName, cache);
+                    var cacheConfiguration = config.GetCacheConfiguration(itemName);
+
+                    if (mgrs.ContainsKey(itemName)) mgrs.Remove(itemName);
+                    var cache = CacheFactory.FromConfiguration<object>(cacheConfiguration);
+                    if (cache != null) mgrs.Add(itemName, cache);
+                }
             }
 
             m_Mgrs = mgrs; // thread-safe (reads and writes of reference types are atomic)
@@ -73,5 +94,71 @@ namespace MySharpServer.Framework
 
     }
 
-    
+    public class InMemoryFileProvider : IFileProvider
+    {
+        private class InMemoryFile : IFileInfo
+        {
+            private readonly byte[] _data;
+            public InMemoryFile(string json) => _data = Encoding.UTF8.GetBytes(json);
+            public Stream CreateReadStream() => new MemoryStream(_data);
+            public bool Exists { get; } = true;
+            public long Length => _data.Length;
+            public string PhysicalPath { get; } = string.Empty;
+            public string Name { get; } = string.Empty;
+            public DateTimeOffset LastModified { get; } = DateTimeOffset.UtcNow;
+            public bool IsDirectory { get; } = false;
+        }
+
+        private readonly IFileInfo _fileInfo;
+        public InMemoryFileProvider(string json) => _fileInfo = new InMemoryFile(json);
+        public IFileInfo GetFileInfo(string _) => _fileInfo;
+        public IDirectoryContents GetDirectoryContents(string _) => null;
+        public IChangeToken Watch(string _) => NullChangeToken.Singleton;
+    }
+
+    public class CacheConfigLoader : ICacheConfigLoader
+    {
+        Dictionary<string, ICacheManagerConfiguration> m_configs = new Dictionary<string, ICacheManagerConfiguration>();
+
+        public List<string> Reload()
+        {
+            List<string> names = new List<string>();
+            Dictionary<string, ICacheManagerConfiguration> configs = new Dictionary<string, ICacheManagerConfiguration>();
+
+            string jsonFilePath = CacheProvider.CACHE_CONFIG_FILE;
+            if (File.Exists(jsonFilePath))
+            {
+                string jsonText = File.ReadAllText(jsonFilePath);
+                var memoryFileProvider = new InMemoryFileProvider(jsonText);
+                var config = new Microsoft.Extensions.Configuration.ConfigurationBuilder()
+                    .AddJsonFile(memoryFileProvider, "fake.json", false, false)
+                    .Build();
+
+                var managerSections = config.GetSection(CacheProvider.CACHE_SECTION_NAME).GetChildren();
+                foreach (var managerSection in managerSections)
+                {
+                    string itemName = managerSection["name"];
+
+                    var cacheConfiguration = config.GetCacheConfiguration(itemName);
+                    if (configs.ContainsKey(itemName)) configs.Remove(itemName);
+                    configs.Add(itemName, cacheConfiguration);
+
+                    if (names.Contains(itemName)) names.Remove(itemName);
+                    names.Add(itemName);
+                }
+
+                m_configs = configs;
+            }
+
+            return names;
+        }
+
+        public ICacheManagerConfiguration GetCacheConfig(string cacheName = "")
+        {
+            var configs = m_configs;
+            if (configs.ContainsKey(cacheName)) return configs[cacheName];
+            else return null;
+        }
+
+    }
 }

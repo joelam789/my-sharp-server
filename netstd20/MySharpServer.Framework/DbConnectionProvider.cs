@@ -11,6 +11,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 
+using MySharpServer.Common;
+
 namespace MySharpServer.Framework
 {
     public class DbConnectionProvider
@@ -130,11 +132,17 @@ namespace MySharpServer.Framework
             if (factory != null && cnnstr != null)
             {
                 // thread-safe (reads and writes of reference types are atomic)
-                m_Config = new DbConnectionConfig(factory, cnnstr);
+                if (DataConfigHelper.DbConnectionStringLoader != null)
+                {
+                    string newCnnStr = DataConfigHelper.DbConnectionStringLoader.GetConnectionString(cnnstr.Name);
+                    if (String.IsNullOrEmpty(newCnnStr)) newCnnStr = cnnstr.ConnectionString;
+                    m_Config = new DbConnectionConfig(factory, new ConnectionStringSettings(cnnstr.Name, newCnnStr, cnnstr.ProviderName));
+                }
+                else m_Config = new DbConnectionConfig(factory, cnnstr);
             }
         }
 
-        public IDbConnection OpenDbConnection(string specifiedCnnStr = "")
+        public IDbConnection OpenDbConnection()
         {
             // thread-safe (reads and writes of reference types are atomic)
             DbConnectionConfig config = m_Config;
@@ -148,8 +156,7 @@ namespace MySharpServer.Framework
                 conn = factory.CreateConnection();
                 if (conn != null)
                 {
-                    conn.ConnectionString = String.IsNullOrEmpty(specifiedCnnStr)
-                                                ? cnnstr.ConnectionString : specifiedCnnStr;
+                    conn.ConnectionString = cnnstr.ConnectionString;
                     conn.Open();
                 }
             }
@@ -168,6 +175,46 @@ namespace MySharpServer.Framework
         {
             DbFactory = factory;
             CnnString = cnnstr;
+        }
+    }
+
+    public class DbConnectionStringLoader : IDbConnectionStringLoader
+    {
+        string m_CnnStrSectionName = "connectionStrings";
+
+        public List<string> Reload()
+        {
+            List<string> names = new List<string>();
+            try
+            {
+                lock (m_CnnStrSectionName)
+                {
+                    ConfigurationManager.RefreshSection(m_CnnStrSectionName);
+
+                    foreach (var item in ConfigurationManager.ConnectionStrings.Cast<ConnectionStringSettings>())
+                    {
+                        if (names.Contains(item.Name)) names.Remove(item.Name);
+                        names.Add(item.Name);
+                    }
+                }
+            }
+            catch { }
+
+            return names;
+        }
+        public string GetConnectionString(string cnnStrName = "")
+        {
+            ConnectionStringSettings cnnstr = null;
+            try
+            {
+                lock (m_CnnStrSectionName)
+                {
+                    cnnstr = ConfigurationManager.ConnectionStrings[cnnStrName];
+                }
+            }
+            catch { }
+
+            return cnnstr == null ? "" : cnnstr.ConnectionString;
         }
     }
 
