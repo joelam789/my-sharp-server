@@ -53,6 +53,8 @@ namespace MySharpServer.Framework
         private IWebServer m_InternalServer = null;
         private IWebServer m_PublicServer = null;
 
+        public Func<IWebServer, IWebServer> OnCreatePublicServer = null;
+
         public ServerNode(string serverName, string serverGroup, IServerLogger logger = null)
         {
             m_ServerName = serverName;
@@ -102,6 +104,7 @@ namespace MySharpServer.Framework
                 {
                     m_PublicServer = new WebSocketServer(this, m_Logger, RequestContext.FLAG_PUBLIC);
                 }
+                if (OnCreatePublicServer != null) m_PublicServer = OnCreatePublicServer(m_PublicServer);
             }
 
             bool isInternalServerOK = true;
