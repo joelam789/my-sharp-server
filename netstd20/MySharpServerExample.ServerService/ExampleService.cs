@@ -23,6 +23,18 @@ namespace MySharpServerExample.ServerService
             return "";
         }
 
+        [Access(Name = "unload")]
+        public async Task<string> Unload(IServerNode node)
+        {
+            //System.Diagnostics.Debugger.Break();
+
+            node.GetServerLogger().Info(this.GetType().Name + " is unloading...");
+            //await Task.Delay(3000);
+            node.GetServerLogger().Info(this.GetType().Name + " is unloaded");
+
+            return "";
+        }
+
         [Access(Name = "hello")]
         public async Task Hello(RequestContext ctx)
         {

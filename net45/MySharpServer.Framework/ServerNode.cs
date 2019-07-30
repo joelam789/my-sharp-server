@@ -233,6 +233,7 @@ namespace MySharpServer.Framework
                     if (!String.IsNullOrEmpty(errmsg))
                     {
                         m_Logger.Error("Failed to unload service [" + item.Key + "] - error: " + errmsg);
+                        //Console.WriteLine("Failed to unload service [" + item.Key + "] - error: " + errmsg);
                     }
                     else
                     {
@@ -473,9 +474,6 @@ namespace MySharpServer.Framework
             if (m_LocalServiceFiles.ContainsKey(svcfile)) return;
             m_LocalServiceFiles.Add(svcfile, DateTime.MinValue);
 
-            if (m_AllCreatedServices.ContainsKey(svcfile)) return;
-            m_AllCreatedServices.TryAdd(svcfile, null); // ...
-
             m_Logger.Info("Added service library: " + svcfile);
         }
 
@@ -512,9 +510,9 @@ namespace MySharpServer.Framework
                                 var attr = ServiceWrapper.GetAnnotation(objtype);
                                 if (attr != null && attr.Name.Length > 0)
                                 {
-                                    if (m_AllCreatedServices.ContainsKey(item.Key))
+                                    if (m_AllCreatedServices.ContainsKey(attr.Name))
                                     {
-                                        var oldone = m_AllCreatedServices[item.Key] as ServiceWrapper;
+                                        var oldone = m_AllCreatedServices[attr.Name] as ServiceWrapper;
                                         if (oldone != null)
                                         {
                                             string errmsg = await oldone.Unload(this);
@@ -540,7 +538,7 @@ namespace MySharpServer.Framework
                                             m_Logger.Error("Failed to load service " + attr.Name + " - error: " + errormsg);
                                             continue;
                                         }
-                                        m_AllCreatedServices[item.Key] = newone;
+                                        m_AllCreatedServices[attr.Name] = newone;
                                         publicServices.Add(attr.Name, newone);
 
                                     }
@@ -554,7 +552,7 @@ namespace MySharpServer.Framework
                                             m_Logger.Error("Failed to init service " + attr.Name + " - " + errormsg);
                                             continue;
                                         }
-                                        m_AllCreatedServices[item.Key] = newone;
+                                        m_AllCreatedServices[attr.Name] = newone;
                                         internalServices.Add(attr.Name, newone);
 
                                         if (attr.Name == "network")
