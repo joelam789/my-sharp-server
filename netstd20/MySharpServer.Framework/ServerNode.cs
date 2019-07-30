@@ -42,6 +42,8 @@ namespace MySharpServer.Framework
 
         private Dictionary<string, DateTime> m_LocalServiceFiles = new Dictionary<string, DateTime>();
 
+        private ConcurrentDictionary<string, ServiceWrapper> m_AllCreatedServices = new ConcurrentDictionary<string, ServiceWrapper>();
+
         private bool m_IsUpdatingLocalServices = false;
         private bool m_IsUploadingLocalServerInfo = false;
         private bool m_IsUpdatingRemoteServices = false;
@@ -213,7 +215,7 @@ namespace MySharpServer.Framework
 
         }
 
-        public void Stop()
+        public async void Stop()
         {
             if (m_UpdateLocalServicesTimer != null) { m_UpdateLocalServicesTimer.Dispose(); m_UpdateLocalServicesTimer = null; }
             if (m_UploadLocalServerInfoTimer != null) { m_UploadLocalServerInfoTimer.Dispose(); m_UploadLocalServerInfoTimer = null; }
@@ -221,6 +223,23 @@ namespace MySharpServer.Framework
 
             if (m_PublicServer != null) { m_PublicServer.Stop(); m_PublicServer = null; }
             if (m_InternalServer != null) { m_InternalServer.Stop(); m_InternalServer = null; }
+
+            foreach (var item in m_AllCreatedServices)
+            {
+                var oldone = m_AllCreatedServices[item.Key] as ServiceWrapper;
+                if (oldone != null)
+                {
+                    string errmsg = await oldone.Unload(this);
+                    if (!String.IsNullOrEmpty(errmsg))
+                    {
+                        m_Logger.Error("Failed to unload service [" + item.Key + "] - error: " + errmsg);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Unloaded service [" + item.Key + "]");
+                    }
+                }
+            }
         }
 
         public bool IsWorking()
@@ -450,8 +469,13 @@ namespace MySharpServer.Framework
                 m_Logger.Error("Service file not found: " + svcfile);
                 return;
             }
+
             if (m_LocalServiceFiles.ContainsKey(svcfile)) return;
             m_LocalServiceFiles.Add(svcfile, DateTime.MinValue);
+
+            if (m_AllCreatedServices.ContainsKey(svcfile)) return;
+            m_AllCreatedServices.TryAdd(svcfile, null); // ...
+
             m_Logger.Info("Added service library: " + svcfile);
         }
 
@@ -488,31 +512,50 @@ namespace MySharpServer.Framework
                                 var attr = ServiceWrapper.GetAnnotation(objtype);
                                 if (attr != null && attr.Name.Length > 0)
                                 {
+                                    if (m_AllCreatedServices.ContainsKey(item.Key))
+                                    {
+                                        var oldone = m_AllCreatedServices[item.Key] as ServiceWrapper;
+                                        if (oldone != null)
+                                        {
+                                            string errmsg = await oldone.Unload(this);
+                                            if (!String.IsNullOrEmpty(errmsg))
+                                            {
+                                                m_Logger.Error("Failed to unload service " + attr.Name + " - error: " + errmsg);
+                                            }
+                                        }
+                                    }
+
                                     if (attr.IsPublic)
                                     {
-                                        if (attr.Name == "network" || attr.Name == "event") continue;
+                                        if (attr.Name == "network" || attr.Name == "event")
+                                        {
+                                            //m_Logger.Warn("Network or Event service should not be public!");
+                                            throw new Exception("Network or Event service should not be public!");
+                                        }
                                         if (publicServices.ContainsKey(attr.Name)) publicServices.Remove(attr.Name);
-                                        var svc = new ServiceWrapper(objtype, attr.Name, attr.IsPublic, m_Logger);
-                                        string errormsg = await svc.Init(this);
+                                        var newone = new ServiceWrapper(objtype, attr.Name, attr.IsPublic, m_Logger);
+                                        string errormsg = await newone.Load(this);
                                         if (!String.IsNullOrEmpty(errormsg))
                                         {
-                                            m_Logger.Error("Failed to init service " + attr.Name + " - error: " + errormsg);
+                                            m_Logger.Error("Failed to load service " + attr.Name + " - error: " + errormsg);
                                             continue;
                                         }
-                                        publicServices.Add(attr.Name, svc);
+                                        m_AllCreatedServices[item.Key] = newone;
+                                        publicServices.Add(attr.Name, newone);
 
                                     }
                                     else
                                     {
                                         if (internalServices.ContainsKey(attr.Name)) internalServices.Remove(attr.Name);
-                                        var svc = new ServiceWrapper(objtype, attr.Name, attr.IsPublic, m_Logger);
-                                        string errormsg = await svc.Init(this);
+                                        var newone = new ServiceWrapper(objtype, attr.Name, attr.IsPublic, m_Logger);
+                                        string errormsg = await newone.Load(this);
                                         if (!String.IsNullOrEmpty(errormsg))
                                         {
-                                            m_Logger.Error("Failed to init service " + attr.Name + " - error: " + errormsg);
+                                            m_Logger.Error("Failed to init service " + attr.Name + " - " + errormsg);
                                             continue;
                                         }
-                                        internalServices.Add(attr.Name, svc);
+                                        m_AllCreatedServices[item.Key] = newone;
+                                        internalServices.Add(attr.Name, newone);
 
                                         if (attr.Name == "network")
                                         {

@@ -11,8 +11,8 @@ namespace MySharpServerExample.ServerService
     [Access(Name = "example")]
     public class ExampleService
     {
-        [Access(Name = "init")]
-        public async Task<string> Init(IServerNode node)
+        [Access(Name = "load")]
+        public async Task<string> Load(IServerNode node)
         {
             //System.Diagnostics.Debugger.Break();
 
