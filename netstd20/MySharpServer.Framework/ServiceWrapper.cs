@@ -56,6 +56,13 @@ namespace MySharpServer.Framework
             }
         }
 
+        public async Task<string> Init(object param)
+        {
+            var result = await Call("init", param, false, "");
+            if (result != null) return result.ToString();
+            return "";
+        }
+
         public async Task<string> ValidateRequest(object param)
         {
             var result = await Call("validate-request", param, false, "");
@@ -89,12 +96,17 @@ namespace MySharpServer.Framework
 
                 if (result != null)
                 {
-                    Task<object> ret = result as Task<object>;
-                    if (ret != null) return await ret;
+                    Task<string> str = result as Task<string>;
+                    if (str != null) return await str;
                     else
                     {
-                        Task task = result as Task;
-                        if (task != null) await task;
+                        Task<object> ret = result as Task<object>;
+                        if (ret != null) return await ret;
+                        else
+                        {
+                            Task task = result as Task;
+                            if (task != null) await task;
+                        }
                     }
                 }
             }

@@ -21,5 +21,7 @@ namespace MySharpServer.Common
         string GetName();
 
         string GetGroup();
+
+        IServerLogger GetServerLogger();
     }
 }

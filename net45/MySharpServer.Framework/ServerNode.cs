@@ -67,6 +67,11 @@ namespace MySharpServer.Framework
                 RemoteCaller.JsonCodec = new NewtonJsonCodec();
         }
 
+        public IServerLogger GetServerLogger()
+        {
+            return m_Logger;
+        }
+
         public bool Start(ServerSetting internalServerSetting, ServerSetting publicServerSetting = null)
         {
             Stop();
@@ -450,7 +455,7 @@ namespace MySharpServer.Framework
             m_Logger.Info("Added service library: " + svcfile);
         }
 
-        private void UpdateLocalServices(object param)
+        private async void UpdateLocalServices(object param)
         {
             if (m_IsUpdatingLocalServices) return;
             else m_IsUpdatingLocalServices = true;
@@ -487,18 +492,33 @@ namespace MySharpServer.Framework
                                     {
                                         if (attr.Name == "network" || attr.Name == "event") continue;
                                         if (publicServices.ContainsKey(attr.Name)) publicServices.Remove(attr.Name);
-                                        publicServices.Add(attr.Name, new ServiceWrapper(objtype, attr.Name, attr.IsPublic, m_Logger));
+                                        var svc = new ServiceWrapper(objtype, attr.Name, attr.IsPublic, m_Logger);
+                                        string errormsg = await svc.Init(this);
+                                        if (!String.IsNullOrEmpty(errormsg))
+                                        {
+                                            m_Logger.Error("Failed to init service " + attr.Name + " - error: " + errormsg);
+                                            continue;
+                                        }
+                                        publicServices.Add(attr.Name, svc);
+
                                     }
                                     else
                                     {
                                         if (internalServices.ContainsKey(attr.Name)) internalServices.Remove(attr.Name);
-                                        internalServices.Add(attr.Name, new ServiceWrapper(objtype, attr.Name, attr.IsPublic, m_Logger));
+                                        var svc = new ServiceWrapper(objtype, attr.Name, attr.IsPublic, m_Logger);
+                                        string errormsg = await svc.Init(this);
+                                        if (!String.IsNullOrEmpty(errormsg))
+                                        {
+                                            m_Logger.Error("Failed to init service " + attr.Name + " - " + errormsg);
+                                            continue;
+                                        }
+                                        internalServices.Add(attr.Name, svc);
 
                                         if (attr.Name == "network")
                                         {
                                             var publicServer = m_PublicServer;
                                             if (publicServer != null && ((m_PublicProtocol == PROTOCOL_WS || m_PublicProtocol == PROTOCOL_WSS)))
-                                                internalServices[attr.Name].Call("set-server", publicServer, false);
+                                                await internalServices[attr.Name].Call("set-server", publicServer, false);
                                         }
                                     }
                                 }

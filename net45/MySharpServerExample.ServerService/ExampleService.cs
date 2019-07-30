@@ -11,6 +11,18 @@ namespace MySharpServerExample.ServerService
     [Access(Name = "example")]
     public class ExampleService
     {
+        [Access(Name = "init")]
+        public async Task<string> Init(IServerNode node)
+        {
+            //System.Diagnostics.Debugger.Break();
+
+            node.GetServerLogger().Info(this.GetType().Name + " is loading...");
+            await Task.Delay(3000);
+            node.GetServerLogger().Info(this.GetType().Name + " is loaded");
+
+            return "";
+        }
+
         [Access(Name = "hello")]
         public async Task Hello(RequestContext ctx)
         {
