@@ -11,7 +11,7 @@ namespace MySharpServerExample.ServerService
     [Access(Name = "example")]
     public class ExampleService
     {
-        [Access(Name = "load")]
+        [Access(Name = "load", IsLocal = true)]
         public async Task<string> Load(IServerNode node)
         {
             //System.Diagnostics.Debugger.Break();
@@ -23,7 +23,7 @@ namespace MySharpServerExample.ServerService
             return "";
         }
 
-        [Access(Name = "unload")]
+        [Access(Name = "unload", IsLocal = true)]
         public async Task<string> Unload(IServerNode node)
         {
             //System.Diagnostics.Debugger.Break();

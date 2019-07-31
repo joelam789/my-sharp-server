@@ -11,12 +11,15 @@ namespace MySharpServer.Common
 
         public bool IsPublic { get; set; }
 
+        public bool IsLocal { get; set; }
+
         public string Version { get; set; } // not support for now
 
         public AccessAttribute()
         {
             Name = "";
             IsPublic = true;
+            IsLocal = false;
             Version = "1.0.0";
         }
     }

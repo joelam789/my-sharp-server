@@ -17,6 +17,7 @@ namespace MySharpServer.Framework
 
         private IServerLogger m_Logger = null;
 
+        private Dictionary<string, MethodInfo> m_LocalActions = new Dictionary<string, MethodInfo>();
         private Dictionary<string, MethodInfo> m_PublicActions = new Dictionary<string, MethodInfo>();
         private Dictionary<string, MethodInfo> m_InternalActions = new Dictionary<string, MethodInfo>();
 
@@ -50,7 +51,7 @@ namespace MySharpServer.Framework
                 if (attr != null)
                 {
                     string actionName = attr.Name;
-                    var actions = attr.IsPublic ? m_PublicActions : m_InternalActions;
+                    var actions = attr.IsLocal ? m_LocalActions : (attr.IsPublic ? m_PublicActions : m_InternalActions);
                     if (!actions.ContainsKey(actionName)) actions.Add(actionName, method);
                 }
             }
@@ -58,33 +59,33 @@ namespace MySharpServer.Framework
 
         public async Task<string> Load(object param)
         {
-            var result = await Call("load", param, false, "");
+            var result = await Call("load", param, false, true, "");
             if (result != null) return result.ToString();
             return "";
         }
 
         public async Task<string> Unload(object param)
         {
-            var result = await Call("unload", param, false, "");
+            var result = await Call("unload", param, false, true, "");
             if (result != null) return result.ToString();
             return "";
         }
 
         public async Task<string> ValidateRequest(object param)
         {
-            var result = await Call("validate-request", param, false, "");
+            var result = await Call("validate-request", param, false, true, "");
             if (result != null) return result.ToString();
             return "";
         }
 
         public async Task<TaskFactory> GetTaskFactory(object param)
         {
-            var result = await Call("get-task-factory", param, false, Task.Factory);
+            var result = await Call("get-task-factory", param, false, true, Task.Factory);
             if (result != null) return result as TaskFactory;
             return null;
         }
 
-        public async Task<object> Call(string actionName, object param, bool publicOnly, object defaultResult)
+        public async Task<object> Call(string actionName, object param, bool publicOnly, bool includingLocal, object defaultResult)
         {
             object result = null;
             try
@@ -95,7 +96,14 @@ namespace MySharpServer.Framework
                     method = null;
                     if (!publicOnly)
                     {
-                        if (!m_InternalActions.TryGetValue(actionName, out method)) method = null;
+                        if (!m_InternalActions.TryGetValue(actionName, out method))
+                        {
+                            method = null;
+                            if (includingLocal)
+                            {
+                                if (!m_LocalActions.TryGetValue(actionName, out method)) method = null;
+                            }
+                        }
                     }
                 }
                 if (method != null) result = method.Invoke(ServiceObject, new object[] { param });
@@ -125,9 +133,14 @@ namespace MySharpServer.Framework
             return result;
         }
 
+        public async Task<object> LocalCall(string actionName, object param)
+        {
+            return await Call(actionName, param, false, true, null);
+        }
+
         public async Task<object> Call(string actionName, object param, bool publicOnly = true)
         {
-            return await Call(actionName, param, publicOnly, null);
+            return await Call(actionName, param, publicOnly, false, null);
         }
 
     }
