@@ -77,7 +77,7 @@ namespace MySharpServer.Framework
         public Dictionary<string, List<string>> GetRemoteServices()
         {
             var services = m_RemoteServices;
-            return new Dictionary<string, List<string>>(services);
+            return services == null ? new Dictionary<string, List<string>>() : new Dictionary<string, List<string>>(services);
         }
 
         public bool Start(ServerSetting internalServerSetting, ServerSetting publicServerSetting = null)
