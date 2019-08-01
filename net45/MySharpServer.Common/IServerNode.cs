@@ -23,5 +23,7 @@ namespace MySharpServer.Common
         string GetGroup();
 
         IServerLogger GetServerLogger();
+
+        Dictionary<string, List<string>> GetRemoteServices();
     }
 }

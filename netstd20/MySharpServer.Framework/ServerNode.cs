@@ -74,6 +74,12 @@ namespace MySharpServer.Framework
             return m_Logger;
         }
 
+        public Dictionary<string, List<string>> GetRemoteServices()
+        {
+            var services = m_RemoteServices;
+            return new Dictionary<string, List<string>>(services);
+        }
+
         public bool Start(ServerSetting internalServerSetting, ServerSetting publicServerSetting = null)
         {
             Stop();
@@ -540,6 +546,7 @@ namespace MySharpServer.Framework
                                         }
                                         m_AllCreatedServices[attr.Name] = newone;
                                         publicServices.Add(attr.Name, newone);
+                                        Console.WriteLine("loaded service [" + attr.Name + "]");
 
                                     }
                                     else
@@ -554,6 +561,7 @@ namespace MySharpServer.Framework
                                         }
                                         m_AllCreatedServices[attr.Name] = newone;
                                         internalServices.Add(attr.Name, newone);
+                                        Console.WriteLine("loaded service [" + attr.Name + "]");
 
                                         if (attr.Name == "network")
                                         {
