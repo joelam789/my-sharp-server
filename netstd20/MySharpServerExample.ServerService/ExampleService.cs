@@ -16,9 +16,9 @@ namespace MySharpServerExample.ServerService
         {
             //System.Diagnostics.Debugger.Break();
 
-            node.GetServerLogger().Info(this.GetType().Name + " is loading...");
+            node.GetLogger().Info(this.GetType().Name + " is loading...");
             await Task.Delay(3000);
-            node.GetServerLogger().Info(this.GetType().Name + " is loaded");
+            node.GetLogger().Info(this.GetType().Name + " is loaded");
 
             return "";
         }
@@ -28,9 +28,11 @@ namespace MySharpServerExample.ServerService
         {
             //System.Diagnostics.Debugger.Break();
 
-            node.GetServerLogger().Info(this.GetType().Name + " is unloading...");
+            //await Task.Delay(100);
+            node.GetLogger().Info(this.GetType().Name + " is unloading...");
             //await Task.Delay(3000);
-            node.GetServerLogger().Info(this.GetType().Name + " is unloaded");
+            node.GetLogger().Info(this.GetType().Name + " is unloaded");
+            //await Task.Delay(100);
 
             return "";
         }

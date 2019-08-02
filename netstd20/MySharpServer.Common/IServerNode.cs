@@ -22,8 +22,13 @@ namespace MySharpServer.Common
 
         string GetGroup();
 
-        IServerLogger GetServerLogger();
+        IServerLogger GetLogger();
+
+        IJsonCodec GetJsonHelper();
+
+        IDataAccessHelper GetDataHelper();
 
         Dictionary<string, List<string>> GetRemoteServices();
+
     }
 }

@@ -69,9 +69,19 @@ namespace MySharpServer.Framework
                 RemoteCaller.JsonCodec = new NewtonJsonCodec();
         }
 
-        public IServerLogger GetServerLogger()
+        public IServerLogger GetLogger()
         {
             return m_Logger;
+        }
+
+        public IJsonCodec GetJsonHelper()
+        {
+            return m_JsonCodec;
+        }
+
+        public IDataAccessHelper GetDataHelper()
+        {
+            return m_DataHelper;
         }
 
         public Dictionary<string, List<string>> GetRemoteServices()
