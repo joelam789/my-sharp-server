@@ -257,6 +257,8 @@ namespace MySharpServer.Framework
                     }
                 }
             }
+
+            ResetLocalServiceFiles();
         }
 
         public bool IsWorking()
@@ -456,10 +458,41 @@ namespace MySharpServer.Framework
             }
         }
 
-        public void AddLocalServiceFilepath(string filepath)
+        public void ResetLocalServiceFiles(List<string> filepaths = null)
+        {
+            Dictionary<string, DateTime> localServiceFiles = new Dictionary<string, DateTime>();
+
+            List<string> svcFilepaths = new List<string>();
+            if (filepaths == null)
+            {
+                var svcFiles = m_LocalServiceFiles;
+                svcFilepaths.AddRange(svcFiles.Keys);
+            }
+            else
+            {
+                svcFilepaths.AddRange(filepaths);
+            }
+
+            List<string> fullFilepaths = new List<string>();
+            foreach (var svcfile in svcFilepaths)
+            {
+                var pathItem = AddLocalServiceFilepath(svcfile, localServiceFiles);
+                if (!String.IsNullOrEmpty(pathItem)) fullFilepaths.Add(pathItem);
+            }
+
+            if (filepaths != null)
+            {
+                foreach (var itemFile in fullFilepaths)
+                    m_Logger.Info("Found plug-in: " + itemFile);
+            }
+
+            m_LocalServiceFiles = localServiceFiles;
+        }
+
+        private string AddLocalServiceFilepath(string filepath, Dictionary<string, DateTime> localServiceFiles)
         {
             var svcfile = String.IsNullOrEmpty(filepath) ? "" : filepath.Trim();
-            if (svcfile.Length <= 0) return;
+            if (svcfile.Length <= 0) return "";
             svcfile = svcfile.Replace('\\', '/');
             if (svcfile[0] != '/' && svcfile.IndexOf(":/") != 1) // if it is not abs path
             {
@@ -484,13 +517,15 @@ namespace MySharpServer.Framework
             if (!File.Exists(svcfile))
             {
                 m_Logger.Error("Service file not found: " + svcfile);
-                return;
+                return "";
             }
 
-            if (m_LocalServiceFiles.ContainsKey(svcfile)) return;
-            m_LocalServiceFiles.Add(svcfile, DateTime.MinValue);
+            if (localServiceFiles.ContainsKey(svcfile)) return "";
+            localServiceFiles.Add(svcfile, DateTime.MinValue);
 
-            m_Logger.Info("Added service library: " + svcfile);
+            return svcfile;
+
+            //m_Logger.Info("Reset service library file: " + svcfile);
         }
 
         private async void UpdateLocalServices(object param)

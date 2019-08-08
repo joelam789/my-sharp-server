@@ -63,7 +63,7 @@ namespace MySharpServerExample.ServerApp
             {
                 m_ServerNode = new ServerNode(m_NodeName, m_GroupName, CommonLog.GetLogger());
                 m_ServerNode.SetServerInfoStorage(m_StorageName);
-                foreach (var svcFile in m_ServiceFileNames) m_ServerNode.AddLocalServiceFilepath(svcFile);
+                m_ServerNode.ResetLocalServiceFiles(m_ServiceFileNames);
             }
         }
 
