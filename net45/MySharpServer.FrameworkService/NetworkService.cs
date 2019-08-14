@@ -10,7 +10,34 @@ namespace MySharpServer.FrameworkService
     [Access(Name = "network", IsPublic = false)]
     public class NetworkService
     {
-        private IWebServer m_Server = null;
+        protected IWebServer m_Server = null;
+        protected IServerNode m_LocalNode = null;
+
+        [Access(Name = "on-load", IsLocal = true)]
+        public string Load(IServerNode node)
+        {
+            //System.Diagnostics.Debugger.Break();
+            m_LocalNode = node;
+            return "";
+        }
+
+        [Access(Name = "get-local-node", IsLocal = true)]
+        public IServerNode GetLocalNode(string param = "")
+        {
+            return m_LocalNode;
+        }
+
+        [Access(Name = "on-connect", IsLocal = true)]
+        public void OnConnect(IWebSession session)
+        {
+            Console.WriteLine(m_LocalNode.GetName() + " - OnWebSocketConnect: " + session.GetRemoteAddress());
+        }
+
+        [Access(Name = "on-disconnect", IsLocal = true)]
+        public void OnDisconnect(IWebSession session)
+        {
+            Console.WriteLine(m_LocalNode.GetName() + " - OnWebSocketDisconnect: " + session.GetRemoteAddress());
+        }
 
         [Access(Name = "set-server")]
         public string SetServer(IWebServer server)

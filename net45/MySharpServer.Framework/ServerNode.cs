@@ -56,6 +56,8 @@ namespace MySharpServer.Framework
         private IWebServer m_PublicServer = null;
 
         public Func<IWebServer, IWebServer> OnCreatePublicServer = null;
+        //public Action<IWebSession> OnWebSocketConnect = null;
+        //public Action<IWebSession> OnWebSocketDisconnect = null;
 
         public ServerNode(string serverName, string serverGroup, IServerLogger logger = null)
         {
@@ -670,10 +672,20 @@ namespace MySharpServer.Framework
             ServiceCollection allsvc = m_LocalServices;
             if (allsvc != null)
             {
-                IActionCaller svc = null;
-                if (allsvc.InternalServices.TryGetValue("event", out svc))
+                //IActionCaller svc = null;
+                //if (allsvc.InternalServices.TryGetValue("event", out svc))
+                //{
+                //    return svc.Call(eventName, eventData, false);
+                //}
+
+                // Local events need local functions only...
+                foreach (var item in allsvc.InternalServices)
                 {
-                    return svc.Call(eventName, eventData, false);
+                    item.Value.LocalCall(eventName, eventData);
+                }
+                foreach (var item in allsvc.PublicServices)
+                {
+                    item.Value.LocalCall(eventName, eventData);
                 }
             }
             return null;

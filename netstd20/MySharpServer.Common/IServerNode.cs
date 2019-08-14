@@ -15,11 +15,12 @@ namespace MySharpServer.Common
         ServiceCollection GetLocalServices();
 
         string GetInternalAccessUrl();
-
         string GetPublicAccessUrl();
 
-        string GetName();
+        IWebServer GetInternalServer();
+        IWebServer GetPublicServer();
 
+        string GetName();
         string GetGroup();
 
         IServerLogger GetLogger();

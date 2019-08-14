@@ -59,14 +59,14 @@ namespace MySharpServer.Framework
 
         public async Task<string> Load(object param)
         {
-            var result = await Call("load", param, false, true, "");
+            var result = await Call("on-load", param, false, true, "");
             if (result != null) return result.ToString();
             return "";
         }
 
         public async Task<string> Unload(object param)
         {
-            var result = await Call("unload", param, false, true, "");
+            var result = await Call("on-unload", param, false, true, "");
             if (result != null) return result.ToString();
             return "";
         }
