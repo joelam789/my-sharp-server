@@ -120,7 +120,7 @@ namespace MySharpServer.Framework
     {
         Dictionary<string, ICacheManagerConfiguration> m_configs = new Dictionary<string, ICacheManagerConfiguration>();
 
-        public List<string> Reload()
+        public virtual List<string> Reload()
         {
             List<string> names = new List<string>();
             Dictionary<string, ICacheManagerConfiguration> configs = new Dictionary<string, ICacheManagerConfiguration>();
@@ -153,7 +153,7 @@ namespace MySharpServer.Framework
             return names;
         }
 
-        public ICacheManagerConfiguration GetCacheConfig(string cacheName = "")
+        public virtual ICacheManagerConfiguration GetCacheConfig(string cacheName = "")
         {
             var configs = m_configs;
             if (configs.ContainsKey(cacheName)) return configs[cacheName];

@@ -551,7 +551,9 @@ namespace MySharpServer.Framework
                     DateTime fileDateTime = File.GetLastWriteTime(item.Key);
                     if (fileDateTime > item.Value)
                     {
-                        var svclib = Assembly.LoadFrom(item.Key);
+                        //var svclib = Assembly.LoadFrom(item.Key);
+                        byte[] assemblyBytes = File.ReadAllBytes(item.Key);
+                        var svclib = Assembly.Load(assemblyBytes);
                         if (svclib == null) m_Logger.Error("Failed to load service library: " + item.Key);
                         else
                         {
@@ -593,7 +595,7 @@ namespace MySharpServer.Framework
                                         }
                                         m_AllCreatedServices[attr.Name] = newone;
                                         publicServices.Add(attr.Name, newone);
-                                        Console.WriteLine("loaded service [" + attr.Name + "]");
+                                        m_Logger.Info("Loaded public service [" + attr.Name + "]");
 
                                     }
                                     else
@@ -608,7 +610,7 @@ namespace MySharpServer.Framework
                                         }
                                         m_AllCreatedServices[attr.Name] = newone;
                                         internalServices.Add(attr.Name, newone);
-                                        Console.WriteLine("loaded service [" + attr.Name + "]");
+                                        m_Logger.Info("Loaded internal service [" + attr.Name + "]");
 
                                         if (attr.Name == "network")
                                         {

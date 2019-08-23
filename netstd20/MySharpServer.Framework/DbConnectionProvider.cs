@@ -182,7 +182,7 @@ namespace MySharpServer.Framework
     {
         string m_CnnStrSectionName = "connectionStrings";
 
-        public List<string> Reload()
+        public virtual List<string> Reload()
         {
             List<string> names = new List<string>();
             try
@@ -202,7 +202,7 @@ namespace MySharpServer.Framework
 
             return names;
         }
-        public string GetConnectionString(string cnnStrName = "")
+        public virtual string GetConnectionString(string cnnStrName = "")
         {
             ConnectionStringSettings cnnstr = null;
             try
