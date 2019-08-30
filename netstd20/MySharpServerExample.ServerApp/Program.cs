@@ -65,12 +65,13 @@ namespace MySharpServerExample.ServerApp
 
             if (m_ServerNode != null && !m_ServerNode.IsWorking())
             {
-                m_ServerNode.Start(m_InternalSetting, m_PublicSetting);
+                //m_ServerNode.Start(m_InternalSetting, m_PublicSetting);
+                m_ServerNode.StartStandaloneMode(m_PublicSetting);
                 Thread.Sleep(50);
                 if (m_ServerNode.IsWorking())
                 {
                     CommonLog.Info("Server Started");
-                    CommonLog.Info("Internal URL: " + m_ServerNode.GetInternalAccessUrl());
+                    if (!m_ServerNode.IsStandalone()) CommonLog.Info("Internal URL: " + m_ServerNode.GetInternalAccessUrl());
                     CommonLog.Info("Public URL: " + m_ServerNode.GetPublicAccessUrl());
                 }
             }

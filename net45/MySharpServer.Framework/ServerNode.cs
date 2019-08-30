@@ -94,6 +94,8 @@ namespace MySharpServer.Framework
 
         public bool Start(ServerSetting internalServerSetting, ServerSetting publicServerSetting = null)
         {
+            if (internalServerSetting == null) return false;
+
             Stop();
 
             string internalProtocol = internalServerSetting.WorkProtocol.ToLower();
@@ -233,6 +235,113 @@ namespace MySharpServer.Framework
 
         }
 
+        public bool IsStandalone()
+        {
+            return (m_PublicServer != null && m_InternalServer == null) 
+                && String.IsNullOrEmpty(m_ServerInfoStorage);
+        }
+
+        public bool StartStandaloneMode(ServerSetting publicServerSetting)
+        {
+            if (publicServerSetting == null) return false;
+
+            Stop();
+
+            SetServerInfoStorage("");
+
+            if (publicServerSetting != null && publicServerSetting.WorkPort > 0)
+            {
+                if (publicServerSetting.WorkProtocol.ToLower().Contains("http"))
+                {
+                    if (publicServerSetting.WorkProtocol.ToLower().Contains("simple-http"))
+                    {
+                        m_PublicServer = new SimpleHttpServer(this, m_Logger, RequestContext.FLAG_PUBLIC, publicServerSetting.AllowOrigin);
+                    }
+                    if (m_PublicServer == null) m_PublicServer = new HttpServer(this, m_Logger, RequestContext.FLAG_PUBLIC, publicServerSetting.AllowOrigin);
+                }
+                else if (publicServerSetting.WorkProtocol.ToLower().Contains("ws"))
+                {
+                    m_PublicServer = new WebSocketServer(this, m_Logger, RequestContext.FLAG_PUBLIC);
+                }
+                if (OnCreatePublicServer != null) m_PublicServer = OnCreatePublicServer(m_PublicServer);
+            }
+
+            bool isPublicServerOK = true;
+
+            if (isPublicServerOK)
+            {
+                m_UpdateLocalServicesTimer = new Timer(UpdateLocalServices, m_LocalServiceFiles, 10, 1000 * 10);
+                m_UploadLocalServerInfoTimer = new Timer(UploadLocalServerInfo, m_LocalServices, 600, 1000 * 1);
+                m_UpdateRemoteServicesTimer = new Timer(UpdateRemoteServices, m_RemoteServices, 800, 1000 * 2);
+            }
+
+            Thread.Sleep(100);
+
+            if (m_LocalServiceFiles.Count > 0)
+            {
+                for (int i = 0; i < 50; i++) // try to wait till loading local services is done (max waiting time is 5000ms)
+                {
+                    var svclist = m_LocalServices;
+                    if (svclist == null || svclist.InternalServices == null || svclist.PublicServices == null
+                        || (svclist.InternalServices.Count <= 0 && svclist.PublicServices.Count <= 0))
+                    {
+                        Thread.Sleep(100);
+                    }
+                    else break;
+                }
+            }
+
+            if (m_PublicServer != null && publicServerSetting != null)
+            {
+                string cert = publicServerSetting.CertFile;
+                if (publicServerSetting.WorkProtocol.ToLower().Contains("https"))
+                {
+                    // if need ssl then just do NOT let "cert" be empty, may set it with "https"
+                    if (String.IsNullOrEmpty(cert)) cert = "https";
+                }
+
+                isPublicServerOK = m_PublicServer.Start(publicServerSetting.WorkPort, publicServerSetting.WorkIp,
+                                                        cert, publicServerSetting.CertKey);
+                if (isPublicServerOK)
+                {
+                    var protocol = m_PublicServer.GetProtocol();
+
+                    if (publicServerSetting.AccessUrl.Length > 0) m_PublicUrl = publicServerSetting.AccessUrl;
+                    else m_PublicUrl = protocol + @"://" + m_PublicServer.GetIp() + ":" + m_PublicServer.GetPort();
+
+                    if (protocol == "http") m_PublicProtocol = PROTOCOL_HTTP;
+                    else if (protocol == "https") m_PublicProtocol = PROTOCOL_HTTPS;
+                    else if (protocol == "ws") m_PublicProtocol = PROTOCOL_WS;
+                    else if (protocol == "wss") m_PublicProtocol = PROTOCOL_WSS;
+
+                    if (m_PublicProtocol == PROTOCOL_WS || m_PublicProtocol == PROTOCOL_WSS)
+                    {
+                        ServiceCollection allsvc = m_LocalServices;
+                        if (allsvc != null)
+                        {
+                            IActionCaller svc = null;
+                            if (allsvc.InternalServices.TryGetValue("network", out svc))
+                            {
+                                svc.Call("set-server", m_PublicServer, false);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    Stop();
+                    return false;
+                }
+            }
+            else
+            {
+                Stop();
+                return false;
+            }
+
+            return isPublicServerOK;
+        }
+
         public async void Stop()
         {
             if (m_UpdateLocalServicesTimer != null) { m_UpdateLocalServicesTimer.Dispose(); m_UpdateLocalServicesTimer = null; }
@@ -265,11 +374,11 @@ namespace MySharpServer.Framework
 
         public bool IsWorking()
         {
-            if (m_InternalServer == null || !m_InternalServer.IsWorking()) return false;
+            if (m_InternalServer != null && !m_InternalServer.IsWorking()) return false;
 
-            if (m_PublicServer == null) return true;
+            if (m_PublicServer != null && !m_PublicServer.IsWorking()) return false;
 
-            return m_PublicServer.IsWorking();
+            return m_InternalServer != null || m_PublicServer != null;
         }
 
         public IWebServer GetInternalServer()

@@ -30,6 +30,7 @@
         {
             this.btnStart = new System.Windows.Forms.Button();
             this.mmLog = new System.Windows.Forms.RichTextBox();
+            this.btnStop = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // btnStart
@@ -46,15 +47,26 @@
             // 
             this.mmLog.Location = new System.Drawing.Point(12, 44);
             this.mmLog.Name = "mmLog";
-            this.mmLog.Size = new System.Drawing.Size(610, 430);
+            this.mmLog.Size = new System.Drawing.Size(778, 384);
             this.mmLog.TabIndex = 2;
             this.mmLog.Text = "";
+            // 
+            // btnStop
+            // 
+            this.btnStop.Location = new System.Drawing.Point(715, 12);
+            this.btnStop.Name = "btnStop";
+            this.btnStop.Size = new System.Drawing.Size(75, 23);
+            this.btnStop.TabIndex = 4;
+            this.btnStop.Text = "Stop";
+            this.btnStop.UseVisualStyleBackColor = true;
+            this.btnStop.Click += new System.EventHandler(this.btnStop_Click);
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(634, 481);
+            this.ClientSize = new System.Drawing.Size(802, 444);
+            this.Controls.Add(this.btnStop);
             this.Controls.Add(this.btnStart);
             this.Controls.Add(this.mmLog);
             this.Name = "MainForm";
@@ -70,6 +82,7 @@
 
         private System.Windows.Forms.Button btnStart;
         private System.Windows.Forms.RichTextBox mmLog;
+        private System.Windows.Forms.Button btnStop;
     }
 }
 
