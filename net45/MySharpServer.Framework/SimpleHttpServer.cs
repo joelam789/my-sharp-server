@@ -230,6 +230,24 @@ namespace MySharpServer.Framework
             else
             {
                 string content = msg.RequestUrl;
+
+                if ((m_SimpleHttpServer.Flags & RequestContext.FLAG_PUBLIC) != 0 
+                    && (m_SimpleHttpServer.Flags & RequestContext.FLAG_ALLOW_PARENT_PATH) != 0)
+                {
+                    var usefulPath = new List<string>();
+                    var parts = content.Split('/');
+                    for (int i = parts.Length - 1; i >= 0; i--)
+                    {
+                        var part = parts[i].Trim();
+                        if (part.Length > 0) usefulPath.Add(part);
+                        if (usefulPath.Count >= 2)
+                        {
+                            content = "/" + usefulPath[1] + "/" + usefulPath[0];
+                            break;
+                        }
+                    }
+                }
+
                 content += (content.EndsWith("/") ? "" : "/") + msg.MessageContent;
                 m_SimpleHttpServer.RequestHandler.HandleRequest(new RequestContext(new SimpleHttpSession(ctx.Session), content, m_SimpleHttpServer.Flags));
             }

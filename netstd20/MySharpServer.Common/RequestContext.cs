@@ -10,6 +10,8 @@ namespace MySharpServer.Common
     {
         public static readonly int FLAG_PUBLIC = 1;
 
+        public static readonly int FLAG_ALLOW_PARENT_PATH = 2;
+
         public IWebSession Session { get; private set; }
 
         public IDataAccessHelper DataHelper { get; set; }

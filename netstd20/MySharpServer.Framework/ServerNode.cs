@@ -121,11 +121,13 @@ namespace MySharpServer.Framework
             {
                 if (publicServerSetting.WorkProtocol.ToLower().Contains("http"))
                 {
+                    var flags = RequestContext.FLAG_PUBLIC;
+                    if (publicServerSetting.AllowParentPath) flags = flags | RequestContext.FLAG_ALLOW_PARENT_PATH;
                     if (publicServerSetting.WorkProtocol.ToLower().Contains("simple-http"))
                     {
-                        m_PublicServer = new SimpleHttpServer(this, m_Logger, RequestContext.FLAG_PUBLIC, publicServerSetting.AllowOrigin);
+                        m_PublicServer = new SimpleHttpServer(this, m_Logger, flags, publicServerSetting.AllowOrigin);
                     }
-                    if (m_PublicServer == null) m_PublicServer = new HttpServer(this, m_Logger, RequestContext.FLAG_PUBLIC, publicServerSetting.AllowOrigin);
+                    if (m_PublicServer == null) m_PublicServer = new HttpServer(this, m_Logger, flags, publicServerSetting.AllowOrigin);
                 }
                 else if (publicServerSetting.WorkProtocol.ToLower().Contains("ws"))
                 {
@@ -253,11 +255,13 @@ namespace MySharpServer.Framework
             {
                 if (publicServerSetting.WorkProtocol.ToLower().Contains("http"))
                 {
+                    var flags = RequestContext.FLAG_PUBLIC;
+                    if (publicServerSetting.AllowParentPath) flags = flags | RequestContext.FLAG_ALLOW_PARENT_PATH;
                     if (publicServerSetting.WorkProtocol.ToLower().Contains("simple-http"))
                     {
-                        m_PublicServer = new SimpleHttpServer(this, m_Logger, RequestContext.FLAG_PUBLIC, publicServerSetting.AllowOrigin);
+                        m_PublicServer = new SimpleHttpServer(this, m_Logger, flags, publicServerSetting.AllowOrigin);
                     }
-                    if (m_PublicServer == null) m_PublicServer = new HttpServer(this, m_Logger, RequestContext.FLAG_PUBLIC, publicServerSetting.AllowOrigin);
+                    if (m_PublicServer == null) m_PublicServer = new HttpServer(this, m_Logger, flags, publicServerSetting.AllowOrigin);
                 }
                 else if (publicServerSetting.WorkProtocol.ToLower().Contains("ws"))
                 {

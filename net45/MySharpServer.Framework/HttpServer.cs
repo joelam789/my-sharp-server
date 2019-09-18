@@ -190,6 +190,24 @@ namespace MySharpServer.Framework
             {
                 var request = ctx.Request;
                 string content = request.Url.AbsolutePath;
+
+                if ((Flags & RequestContext.FLAG_PUBLIC) != 0 
+                    && (Flags & RequestContext.FLAG_ALLOW_PARENT_PATH) != 0)
+                {
+                    var usefulPath = new List<string>();
+                    var parts = content.Split('/');
+                    for (int i = parts.Length - 1; i >= 0; i--)
+                    {
+                        var part = parts[i].Trim();
+                        if (part.Length > 0) usefulPath.Add(part);
+                        if (usefulPath.Count >= 2)
+                        {
+                            content = "/" + usefulPath[1] + "/" + usefulPath[0];
+                            break;
+                        }
+                    }
+                }
+
                 using (var reader = new StreamReader(request.InputStream, request.ContentEncoding))
                 {
                     content += (content.EndsWith("/") ? "" : "/") + (await reader.ReadToEndAsync());

@@ -17,6 +17,8 @@ namespace MySharpServer.Common
 
         public string AllowOrigin { get; set; }
 
+        public bool AllowParentPath { get; set; }
+
         public string CertFile { get; set; }
 
         public string CertKey { get; set; }
@@ -30,6 +32,8 @@ namespace MySharpServer.Common
             AccessUrl = "";
 
             AllowOrigin = "";
+
+            AllowParentPath = false;
 
             CertFile = "";
             CertKey = "";
