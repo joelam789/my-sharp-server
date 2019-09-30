@@ -200,7 +200,7 @@ namespace MySharpServer.Common
                     var remoteInfoParts = RandomPicker.Pick<string>(remoteServerList).Split('|');
                     if (remoteInfoParts.Length >= 2)
                     {
-                        string remoteUrl = remoteInfoParts[1]; // name | url | key
+                        string remoteUrl = remoteInfoParts[1].Split(',')[0]; // name | url | key
                         string svrKey = remoteInfoParts.Length >= 3 ? remoteInfoParts[2] : "";
                         return await Call(remoteUrl, service, action, data, svrKey, timeout);
                     }

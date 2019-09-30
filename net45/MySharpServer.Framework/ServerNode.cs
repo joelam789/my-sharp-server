@@ -524,7 +524,7 @@ namespace MySharpServer.Framework
                     Dictionary<string, List<string>> services = new Dictionary<string, List<string>>();
                     using (var cmd = cnn.CreateCommand())
                     {
-                        cmd.CommandText = "select server_name, group_name, server_url, service_list, access_key from db_sharp_node.tbl_server_info "
+                        cmd.CommandText = "select server_name, group_name, public_url, server_url, service_list, access_key from db_sharp_node.tbl_server_info "
                                         + " where visibility > 0 and TIMESTAMPDIFF(SECOND, update_time, CURRENT_TIMESTAMP) <= 3 ";
 
                         using (var reader = cmd.ExecuteReader())
@@ -539,7 +539,14 @@ namespace MySharpServer.Framework
 
                                 if (serverName.Length <= 0 || serverUrl.Length <= 0 || serviceList.Length <= 0) continue;
 
-                                var svrItem = serverName + "@" + serverGroupName + "|" + serverUrl + (accessKey == null || accessKey.Length <= 0 ? "" : ("|" + accessKey));
+                                var publicUrlValue = reader["public_url"];
+                                string publicUrl = publicUrlValue is System.DBNull ? "" : publicUrlValue as string;
+                                if (publicUrl == null) publicUrl = "";
+
+                                var svrItem = serverName + "@" + serverGroupName + "|" 
+                                            + (serverUrl + (String.IsNullOrEmpty(publicUrl) ? "" : ("," + publicUrl))) 
+                                            + (String.IsNullOrEmpty(accessKey) ? "" : ("|" + accessKey));
+
                                 var svcArray = serviceList.Split(',');
                                 foreach (var svc in svcArray)
                                 {
@@ -863,7 +870,7 @@ namespace MySharpServer.Framework
                     var remoteInfoParts = RandomPicker.Pick<string>(remoteServers).Split('|');
                     if (remoteInfoParts.Length >= 2)
                     {
-                        string remoteUrl = remoteInfoParts[1]; // name | url | key
+                        string remoteUrl = remoteInfoParts[1].Split(',')[0]; // name | url | key
                         try
                         {
                             result = await RemoteCaller.Call(remoteUrl, serviceName, actionName, 
