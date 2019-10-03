@@ -68,9 +68,7 @@ namespace MySharpServer.Framework
             var url = "";
             if (m_Session != null)
             {
-                var urlInfo = HttpMessage.GetRequestUrlInfo(m_Session);
-                if (urlInfo != null && urlInfo.ContainsKey("Path"))
-                    url = urlInfo["Path"];
+                url = HttpMessage.GetSessionData(m_Session, "Path").ToString();
             }
             return url;
         }
