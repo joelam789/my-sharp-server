@@ -13,7 +13,7 @@ namespace MySharpServer.Common
         string GetProtocol();
         string GetRemoteAddress();
 
-        IDictionary<string, string> GetHeaders();
+        string GetRequestPath();
 
         void BeginResponse();
         Task Send(string msg, IDictionary<string, string> metadata = null);

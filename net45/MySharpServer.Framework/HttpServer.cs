@@ -212,7 +212,12 @@ namespace MySharpServer.Framework
                 {
                     content += (content.EndsWith("/") ? "" : "/") + (await reader.ReadToEndAsync());
                 }
-                RequestHandler.HandleRequest(new RequestContext(new HttpSession(ctx, AllowOrigin), content, Flags));
+                var reqctx = new RequestContext(new HttpSession(ctx, AllowOrigin), content, Flags);
+                reqctx.RequestPath = request.RawUrl;
+                reqctx.Headers = new Dictionary<string, string>();
+                string[] keys = request.Headers.AllKeys;
+                foreach (var key in keys) reqctx.Headers.Add(key, request.Headers[key]);
+                RequestHandler.HandleRequest(reqctx);
             }
             catch (Exception ex)
             {

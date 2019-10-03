@@ -60,19 +60,14 @@ namespace MySharpServer.Framework
             return m_RemoteAddress;
         }
 
-        public IDictionary<string, string> GetHeaders()
+        public string GetRequestPath()
         {
-            IDictionary<string, string> headers = null;
+            var url = "";
             if (m_Session != null)
             {
-                headers = new Dictionary<string, string>();
-                string[] keys = m_Session.Request.Headers.AllKeys;
-                foreach (var key in keys)
-                {
-                    headers.Add(key, m_Session.Request.Headers[key]);
-                }
+                url = m_Session.Request.RawUrl;
             }
-            return headers;
+            return url;
         }
 
         public void BeginResponse()

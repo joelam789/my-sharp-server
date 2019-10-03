@@ -375,7 +375,10 @@ namespace MySharpServer.Framework
             }
             else
             {
-                m_WebSocketServer.RequestHandler.HandleRequest(new RequestContext(new WebSocketSession(ctx.Session), msg.MessageContent, m_WebSocketServer.Flags));
+                var reqctx = new RequestContext(new WebSocketSession(ctx.Session), msg.MessageContent, m_WebSocketServer.Flags);
+                reqctx.RequestPath = WebMessage.GetSessionData(ctx.Session, "Path").ToString();
+                reqctx.Headers = new Dictionary<string, string>(msg.Headers);
+                m_WebSocketServer.RequestHandler.HandleRequest(reqctx);
             }
 
             

@@ -32,6 +32,10 @@ namespace MySharpServer.Common
         public String EntryServer { get; set; }
         public String ClientAddress { get; set; }
 
+        public String RequestPath { get; set; }
+
+        public IDictionary<string, string> Headers { get; set; }
+
         public RequestContext()
         {
             Session = null;
@@ -52,6 +56,9 @@ namespace MySharpServer.Common
             LocalServer = null;
             EntryServer = null;
             ClientAddress = null;
+
+            RequestPath = null;
+            Headers = null;
         }
 
         public RequestContext(String content, Int32 flags): this()

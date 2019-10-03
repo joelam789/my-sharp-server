@@ -61,15 +61,14 @@ namespace MySharpServer.Framework
             return m_RemoteAddress;
         }
 
-        public IDictionary<string, string> GetHeaders()
+        public string GetRequestPath()
         {
-            IDictionary<string, string> headers = null;
+            var url = "";
             if (m_Session != null)
             {
-                var reqHeaders = WebMessage.GetIncomingHeaders(m_Session);
-                if (reqHeaders != null) headers = new Dictionary<string, string>(reqHeaders);
+                url = WebMessage.GetSessionData(m_Session, "Path").ToString();
             }
-            return headers;
+            return url;
         }
 
         public async Task Send(string msg, IDictionary<string, string> metadata = null)

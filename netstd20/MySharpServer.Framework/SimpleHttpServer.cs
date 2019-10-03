@@ -249,7 +249,10 @@ namespace MySharpServer.Framework
                 }
 
                 content += (content.EndsWith("/") ? "" : "/") + msg.MessageContent;
-                m_SimpleHttpServer.RequestHandler.HandleRequest(new RequestContext(new SimpleHttpSession(ctx.Session), content, m_SimpleHttpServer.Flags));
+                var reqctx = new RequestContext(new SimpleHttpSession(ctx.Session), content, m_SimpleHttpServer.Flags);
+                reqctx.RequestPath = msg.RequestUrl;
+                reqctx.Headers = new Dictionary<string, string>(msg.Headers);
+                m_SimpleHttpServer.RequestHandler.HandleRequest(reqctx);
             }
 
 
