@@ -108,7 +108,7 @@ namespace MySharpServer.Framework
         {
             if (m_Session != null)
             {
-                m_Session.Close();
+                m_Session.Close(false);
             }
         }
     }
