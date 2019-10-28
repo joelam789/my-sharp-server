@@ -61,10 +61,33 @@ namespace MySharpServer.Common
 
             if (headers != null)
             {
-                foreach (var item in headers) httpWebRequest.Headers.Add(item.Key, item.Value);
-                if (!headers.ContainsKey("Accept")) httpWebRequest.Accept = "*/*";
-                if (!headers.ContainsKey("UserAgent")) httpWebRequest.UserAgent = "curl/7.50.0";
-                if (param != null && !headers.ContainsKey("ContentType")) httpWebRequest.ContentType = "text/plain";
+                var reqHeaders = new Dictionary<string, string>(headers);
+
+                if (!reqHeaders.ContainsKey("Accept")) httpWebRequest.Accept = "*/*";
+                else
+                {
+                    httpWebRequest.Accept = reqHeaders["Accept"];
+                    reqHeaders.Remove("Accept");
+                }
+                if (!reqHeaders.ContainsKey("UserAgent") && !reqHeaders.ContainsKey("User-Agent")) httpWebRequest.UserAgent = "curl/7.50.0";
+                else
+                {
+                    httpWebRequest.UserAgent = reqHeaders.ContainsKey("UserAgent") ? reqHeaders["UserAgent"] : reqHeaders["User-Agent"];
+                    reqHeaders.Remove("UserAgent");
+                    reqHeaders.Remove("User-Agent");
+                }
+                if (param != null)
+                {
+                    if (!reqHeaders.ContainsKey("ContentType") && !reqHeaders.ContainsKey("Content-Type")) httpWebRequest.ContentType = "text/plain";
+                    else
+                    {
+                        httpWebRequest.ContentType = reqHeaders.ContainsKey("ContentType") ? reqHeaders["ContentType"] : reqHeaders["Content-Type"];
+                        reqHeaders.Remove("ContentType");
+                        reqHeaders.Remove("Content-Type");
+                    }
+                }
+
+                foreach (var item in reqHeaders) httpWebRequest.Headers.Add(item.Key, item.Value);
             }
             else
             {
