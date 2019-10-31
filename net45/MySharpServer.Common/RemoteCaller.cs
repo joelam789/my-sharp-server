@@ -96,6 +96,55 @@ namespace MySharpServer.Common
             return result;
         }
 
+        public static async Task<object> CustomRequest(string url, object param, Action<HttpWebRequest> updateRequestParamFunc = null)
+        {
+            return JsonCodec.ToJsonObject(await CustomRequest<string>(url, param, updateRequestParamFunc));
+        }
+
+        public static async Task<T> CustomRequest<T>(string url, object param, Action<HttpWebRequest> updateRequestParamFunc = null) where T : class
+        {
+            T result = null;
+            string input = null;
+
+            if (param != null)
+                input = param is string ? param.ToString() : JsonCodec.ToJsonString(param);
+
+            HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(url);
+
+            httpWebRequest.Accept = "*/*";
+            httpWebRequest.UserAgent = "curl/7.50.0";
+            httpWebRequest.ContentType = "text/plain";
+            httpWebRequest.Method = param == null ? "GET" : "POST";
+            httpWebRequest.Timeout = DefaultTimeout;
+
+            updateRequestParamFunc?.Invoke(httpWebRequest);
+
+            if (input != null)
+            {
+                using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
+                {
+                    await streamWriter.WriteAsync(input);
+                    await streamWriter.FlushAsync();
+                    streamWriter.Close();
+                }
+            }
+
+            using (var response = await TryToGetResponse(httpWebRequest))
+            {
+                using (StreamReader streamReader = new StreamReader(response.GetResponseStream()))
+                {
+                    string responseString = await streamReader.ReadToEndAsync();
+                    var expectedType = typeof(T);
+                    if (expectedType == typeof(string)) result = responseString as T;
+                    else if (expectedType == typeof(IDictionary<string, object>)) result = JsonCodec.ToDictionary(responseString) as T;
+                    else result = JsonCodec.ToJsonObject<T>(responseString);
+                    streamReader.Close();
+                }
+            }
+
+            return result;
+        }
+
         public static async Task<string> Call(string url, string service, string action, string data, string key = "", int timeout = 0)
         {
             string result = "";
