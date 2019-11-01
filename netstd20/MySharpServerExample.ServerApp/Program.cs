@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.Threading;
+using System.Threading.Tasks;
 
 using NLog;
 using NLog.Config;
@@ -63,26 +64,30 @@ namespace MySharpServerExample.ServerApp
 
             Console.WriteLine("Start server...");
 
-            if (m_ServerNode != null && !m_ServerNode.IsWorking())
+            Task.Run(async () =>
             {
-                //m_ServerNode.Start(m_InternalSetting, m_PublicSetting);
-                m_ServerNode.StartStandaloneMode(m_PublicSetting);
-                Thread.Sleep(50);
-                if (m_ServerNode.IsWorking())
+                if (m_ServerNode != null && !m_ServerNode.IsWorking())
                 {
-                    CommonLog.Info("Server Started");
-                    if (!m_ServerNode.IsStandalone()) CommonLog.Info("Internal URL: " + m_ServerNode.GetInternalAccessUrl());
-                    CommonLog.Info("Public URL: " + m_ServerNode.GetPublicAccessUrl());
+                    //m_ServerNode.Start(m_InternalSetting, m_PublicSetting);
+                    await m_ServerNode.StartStandaloneMode(m_PublicSetting);
+                    await Task.Delay(50);
+                    if (m_ServerNode.IsWorking())
+                    {
+                        CommonLog.Info("Server Started");
+                        if (!m_ServerNode.IsStandalone()) CommonLog.Info("Internal URL: " + m_ServerNode.GetInternalAccessUrl());
+                        CommonLog.Info("Public URL: " + m_ServerNode.GetPublicAccessUrl());
+                    }
                 }
-            }
 
-            Console.WriteLine("Press any key to quit...");
-            Console.ReadLine();
+                Console.WriteLine("Press any key to quit...");
+                Console.ReadLine();
 
-            Console.WriteLine("Stop server...");
-            if (m_ServerNode != null) m_ServerNode.Stop();
+                Console.WriteLine("Stop server...");
+                if (m_ServerNode != null) await m_ServerNode.Stop();
 
-            Console.WriteLine("Done!");
+                Console.WriteLine("Done!");
+
+            }).Wait();
         }
     }
 }

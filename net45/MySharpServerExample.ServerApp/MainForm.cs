@@ -7,9 +7,11 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 using Newtonsoft.Json;
+
 using MySharpServer.Common;
 using MySharpServer.Framework;
 
@@ -67,19 +69,19 @@ namespace MySharpServerExample.ServerApp
             }
         }
 
-        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        private async void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if (m_ServerNode != null) m_ServerNode.Stop();
+            if (m_ServerNode != null) await m_ServerNode.Stop();
         }
 
-        private void btnStart_Click(object sender, EventArgs e)
+        private async void btnStart_Click(object sender, EventArgs e)
         {
             if (m_ServerNode != null && !m_ServerNode.IsWorking())
             {
                 CommonLog.Info("Starting...");
                 //m_ServerNode.Start(m_InternalSetting, m_PublicSetting);
-                m_ServerNode.StartStandaloneMode(m_PublicSetting);
-                Thread.Sleep(50);
+                await m_ServerNode.StartStandaloneMode(m_PublicSetting);
+                await Task.Delay(50);
                 if (m_ServerNode.IsWorking())
                 {
                     CommonLog.Info("Server Started");
@@ -89,9 +91,9 @@ namespace MySharpServerExample.ServerApp
             }
         }
 
-        private void btnStop_Click(object sender, EventArgs e)
+        private async void btnStop_Click(object sender, EventArgs e)
         {
-            if (m_ServerNode != null && m_ServerNode.IsWorking()) m_ServerNode.Stop();
+            if (m_ServerNode != null && m_ServerNode.IsWorking()) await m_ServerNode.Stop();
         }
     }
 }

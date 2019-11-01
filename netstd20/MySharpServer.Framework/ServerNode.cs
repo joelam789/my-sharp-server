@@ -92,11 +92,15 @@ namespace MySharpServer.Framework
             return services == null ? new Dictionary<string, List<string>>() : new Dictionary<string, List<string>>(services);
         }
 
-        public bool Start(ServerSetting internalServerSetting, ServerSetting publicServerSetting = null)
+        public async Task<bool> Start(ServerSetting internalServerSetting, ServerSetting publicServerSetting = null)
         {
             if (internalServerSetting == null) return false;
 
-            Stop();
+            //m_Logger.Info("Call Start()");
+
+            await Stop();
+
+            //m_Logger.Info("After call Stop() in Start()");
 
             string internalProtocol = internalServerSetting.WorkProtocol.ToLower();
 
@@ -157,13 +161,13 @@ namespace MySharpServer.Framework
                 }
                 else
                 {
-                    Stop();
+                    await Stop();
                     return false;
                 }
             }
             else
             {
-                Stop();
+                await Stop();
                 return false;
             }
 
@@ -174,7 +178,7 @@ namespace MySharpServer.Framework
                 m_UpdateRemoteServicesTimer = new Timer(UpdateRemoteServices, m_RemoteServices, 800, 1000 * 2);
             }
 
-            Thread.Sleep(100);
+            await Task.Delay(100);
 
             if (m_LocalServiceFiles.Count > 0)
             {
@@ -184,7 +188,7 @@ namespace MySharpServer.Framework
                     if (svclist == null || svclist.InternalServices == null || svclist.PublicServices == null
                         || (svclist.InternalServices.Count <= 0 && svclist.PublicServices.Count <= 0))
                     {
-                        Thread.Sleep(100);
+                        await Task.Delay(100);
                     }
                     else break;
                 }
@@ -221,14 +225,14 @@ namespace MySharpServer.Framework
                             IActionCaller svc = null;
                             if (allsvc.InternalServices.TryGetValue("network", out svc))
                             {
-                                svc.Call("set-server", m_PublicServer, false);
+                                await svc.Call("set-server", m_PublicServer, false);
                             }
                         }
                     }
                 }
                 else
                 {
-                    Stop();
+                    await Stop();
                     return false;
                 }
             }
@@ -239,15 +243,19 @@ namespace MySharpServer.Framework
 
         public bool IsStandalone()
         {
-            return (m_PublicServer != null && m_InternalServer == null)
+            return (m_PublicServer != null && m_InternalServer == null) 
                 && String.IsNullOrEmpty(m_ServerInfoStorage);
         }
 
-        public bool StartStandaloneMode(ServerSetting publicServerSetting)
+        public async Task<bool> StartStandaloneMode(ServerSetting publicServerSetting)
         {
             if (publicServerSetting == null) return false;
 
-            Stop();
+            //m_Logger.Info("Call Standalone Start()");
+
+            await Stop();
+
+            //m_Logger.Info("After call Stop() in Standalone Start()");
 
             SetServerInfoStorage("");
 
@@ -279,7 +287,7 @@ namespace MySharpServer.Framework
                 m_UpdateRemoteServicesTimer = new Timer(UpdateRemoteServices, m_RemoteServices, 800, 1000 * 2);
             }
 
-            Thread.Sleep(100);
+            await Task.Delay(100);
 
             if (m_LocalServiceFiles.Count > 0)
             {
@@ -289,7 +297,7 @@ namespace MySharpServer.Framework
                     if (svclist == null || svclist.InternalServices == null || svclist.PublicServices == null
                         || (svclist.InternalServices.Count <= 0 && svclist.PublicServices.Count <= 0))
                     {
-                        Thread.Sleep(100);
+                        await Task.Delay(100);
                     }
                     else break;
                 }
@@ -326,35 +334,37 @@ namespace MySharpServer.Framework
                             IActionCaller svc = null;
                             if (allsvc.InternalServices.TryGetValue("network", out svc))
                             {
-                                svc.Call("set-server", m_PublicServer, false);
+                                await svc.Call("set-server", m_PublicServer, false);
                             }
                         }
                     }
                 }
                 else
                 {
-                    Stop();
+                    await Stop();
                     return false;
                 }
             }
             else
             {
-                Stop();
+                await Stop();
                 return false;
             }
 
             return isPublicServerOK;
         }
 
-        public async void Stop()
+        public async Task Stop()
         {
+            //m_Logger.Info("Call Stop()");
+
             if (m_UpdateLocalServicesTimer != null) { m_UpdateLocalServicesTimer.Dispose(); m_UpdateLocalServicesTimer = null; }
             if (m_UploadLocalServerInfoTimer != null) { m_UploadLocalServerInfoTimer.Dispose(); m_UploadLocalServerInfoTimer = null; }
             if (m_UpdateRemoteServicesTimer != null) { m_UpdateRemoteServicesTimer.Dispose(); m_UpdateRemoteServicesTimer = null; }
 
             if (m_PublicServer != null) { m_PublicServer.Stop(); m_PublicServer = null; }
             if (m_InternalServer != null) { m_InternalServer.Stop(); m_InternalServer = null; }
-
+            
             foreach (var item in m_AllCreatedServices)
             {
                 var oldone = m_AllCreatedServices[item.Key] as ServiceWrapper;
@@ -426,6 +436,8 @@ namespace MySharpServer.Framework
 
         private void UploadLocalServerInfo(object param)
         {
+            if (m_PublicServer == null && m_InternalServer == null) return;
+
             if (m_ServerInfoStorage == null || m_ServerInfoStorage.Length <= 0) return;
             if (m_IsUploadingLocalServerInfo) return;
             else m_IsUploadingLocalServerInfo = true;
@@ -512,6 +524,8 @@ namespace MySharpServer.Framework
 
         private void UpdateRemoteServices(object param)
         {
+            if (m_PublicServer == null && m_InternalServer == null) return;
+
             if (m_ServerInfoStorage == null || m_ServerInfoStorage.Length <= 0) return;
             if (m_IsUpdatingRemoteServices) return;
             else m_IsUpdatingRemoteServices = true;
@@ -543,8 +557,8 @@ namespace MySharpServer.Framework
                                 string publicUrl = publicUrlValue is System.DBNull ? "" : publicUrlValue as string;
                                 if (publicUrl == null) publicUrl = "";
 
-                                var svrItem = serverName + "@" + serverGroupName + "|"
-                                            + (serverUrl + (String.IsNullOrEmpty(publicUrl) ? "" : ("," + publicUrl)))
+                                var svrItem = serverName + "@" + serverGroupName + "|" 
+                                            + (serverUrl + (String.IsNullOrEmpty(publicUrl) ? "" : ("," + publicUrl))) 
                                             + (String.IsNullOrEmpty(accessKey) ? "" : ("|" + accessKey));
 
                                 var svcArray = serviceList.Split(',');
@@ -582,6 +596,8 @@ namespace MySharpServer.Framework
 
         public void ResetLocalServiceFiles(List<string> filepaths = null)
         {
+            //m_Logger.Info("Call ResetLocalServiceFiles(): " + (filepaths == null ? "null" : filepaths.Count.ToString()));
+
             Dictionary<string, DateTime> localServiceFiles = new Dictionary<string, DateTime>();
 
             List<string> svcFilepaths = new List<string>();
@@ -641,6 +657,10 @@ namespace MySharpServer.Framework
                 m_Logger.Error("Service file not found: " + svcfile);
                 return "";
             }
+            else
+            {
+                svcfile = new FileInfo(svcfile).FullName;
+            }
 
             if (localServiceFiles.ContainsKey(svcfile)) return "";
             localServiceFiles.Add(svcfile, DateTime.MinValue);
@@ -652,6 +672,8 @@ namespace MySharpServer.Framework
 
         private async void UpdateLocalServices(object param)
         {
+            if (m_PublicServer == null && m_InternalServer == null) return;
+
             if (m_IsUpdatingLocalServices) return;
             else m_IsUpdatingLocalServices = true;
             try
@@ -669,6 +691,11 @@ namespace MySharpServer.Framework
                         continue;
                     }
                     DateTime fileDateTime = File.GetLastWriteTime(item.Key);
+
+                    //m_Logger.Info("Try to update local lib file: " + item.Key);
+                    //m_Logger.Info("Original file date: " + item.Value.ToString("yyyy-MM-dd HH:mm:ss"));
+                    //m_Logger.Info("Current file date : " + fileDateTime.ToString("yyyy-MM-dd HH:mm:ss"));
+
                     if (fileDateTime > item.Value)
                     {
                         //var svclib = Assembly.LoadFrom(item.Key);
