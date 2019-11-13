@@ -68,8 +68,8 @@ namespace MySharpServerExample.ServerApp
             {
                 if (m_ServerNode != null && !m_ServerNode.IsWorking())
                 {
-                    //m_ServerNode.Start(m_InternalSetting, m_PublicSetting);
-                    await m_ServerNode.StartStandaloneMode(m_PublicSetting);
+                    await m_ServerNode.Start(m_InternalSetting, m_PublicSetting);
+                    //await m_ServerNode.StartStandaloneMode(m_PublicSetting);
                     await Task.Delay(50);
                     if (m_ServerNode.IsWorking())
                     {
