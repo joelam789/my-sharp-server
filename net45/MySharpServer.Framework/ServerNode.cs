@@ -383,6 +383,8 @@ namespace MySharpServer.Framework
                 }
             }
 
+            m_AllCreatedServices.Clear();
+
             ResetLocalServiceFiles();
         }
 
