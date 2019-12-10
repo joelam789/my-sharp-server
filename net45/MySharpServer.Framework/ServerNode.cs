@@ -488,7 +488,7 @@ namespace MySharpServer.Framework
                         m_DataHelper.AddParam(cmd, "@services", svclist);
                         m_DataHelper.AddParam(cmd, "@accessKey", m_AccessKey);
 
-                        cmd.CommandText = "update db_sharp_node.tbl_server_info " 
+                        cmd.CommandText = "update tbl_server_info " 
                                             + " set group_name = @groupName "
                                             + ", server_url = @serverUrl "
                                             + ", public_url = @publicUrl "
@@ -503,7 +503,7 @@ namespace MySharpServer.Framework
                         int rows = cmd.ExecuteNonQuery();
                         if (rows == 0)
                         {
-                            cmd.CommandText = "insert into db_sharp_node.tbl_server_info "
+                            cmd.CommandText = "insert into tbl_server_info "
                                             + " ( server_name, group_name, server_url, public_url, public_protocol, client_count, service_list, access_key, update_time ) values "
                                             + " ( @serverName , @groupName , @serverUrl , @publicUrl , @protocol , @clients , @services , @accessKey , CURRENT_TIMESTAMP ) "
                                             ;
@@ -540,7 +540,7 @@ namespace MySharpServer.Framework
                     Dictionary<string, List<string>> services = new Dictionary<string, List<string>>();
                     using (var cmd = cnn.CreateCommand())
                     {
-                        cmd.CommandText = "select server_name, group_name, public_url, server_url, service_list, access_key from db_sharp_node.tbl_server_info "
+                        cmd.CommandText = "select server_name, group_name, public_url, server_url, service_list, access_key from tbl_server_info "
                                         + " where visibility > 0 and TIMESTAMPDIFF(SECOND, update_time, CURRENT_TIMESTAMP) <= 3 ";
 
                         using (var reader = cmd.ExecuteReader())
