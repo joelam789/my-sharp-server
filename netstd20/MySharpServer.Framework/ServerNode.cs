@@ -48,6 +48,9 @@ namespace MySharpServer.Framework
         private bool m_IsUploadingLocalServerInfo = false;
         private bool m_IsUpdatingRemoteServices = false;
 
+        private bool m_IsStarting = false;
+        private bool m_IsStopping = false;
+
         private Timer m_UpdateLocalServicesTimer = null;   // check dll file and load it if it's newer
         private Timer m_UploadLocalServerInfoTimer = null; // upload all local services, internal access url and public access url
         private Timer m_UpdateRemoteServicesTimer = null;  // auto get all services and internal access urls of all online servers
@@ -92,152 +95,162 @@ namespace MySharpServer.Framework
             return services == null ? new Dictionary<string, List<string>>() : new Dictionary<string, List<string>>(services);
         }
 
+        public bool IsStarting()
+        {
+            return m_IsStarting;
+        }
+
+        public bool IsStopping()
+        {
+            return m_IsStopping;
+        }
+
         public async Task<bool> Start(ServerSetting internalServerSetting, ServerSetting publicServerSetting = null)
         {
             if (internalServerSetting == null) return false;
 
-            //m_Logger.Info("Call Start()");
-
             await Stop();
 
-            //m_Logger.Info("After call Stop() in Start()");
+            if (m_IsStarting) return false;
+            m_IsStarting = true;
 
-            string internalProtocol = internalServerSetting.WorkProtocol.ToLower();
+            try
+            {
+                string internalProtocol = internalServerSetting.WorkProtocol.ToLower();
 
-            if (!internalProtocol.Contains("http"))
-            {
-                m_Logger.Error("Internal server supports only HTTP listener");
-                return false;
-            }  
-            if (internalServerSetting.WorkPort <= 0)
-            {
-                m_Logger.Error("Invalid internal server port: " + internalServerSetting.WorkPort);
-                return false;
-            }
-
-            if (internalServerSetting.WorkProtocol.ToLower().Contains("simple-http"))
-            {
-                m_InternalServer = new SimpleHttpServer(this, m_Logger);
-            }
-            if (m_InternalServer == null) m_InternalServer = new HttpServer(this, m_Logger);
-
-            if (publicServerSetting != null && publicServerSetting.WorkPort > 0)
-            {
-                if (publicServerSetting.WorkProtocol.ToLower().Contains("http"))
+                if (!internalProtocol.Contains("http"))
                 {
-                    var flags = RequestContext.FLAG_PUBLIC;
-                    if (publicServerSetting.AllowParentPath) flags = flags | RequestContext.FLAG_ALLOW_PARENT_PATH;
-                    if (publicServerSetting.WorkProtocol.ToLower().Contains("simple-http"))
+                    m_Logger.Error("Internal server supports only HTTP listener");
+                    return false;
+                }
+                if (internalServerSetting.WorkPort <= 0)
+                {
+                    m_Logger.Error("Invalid internal server port: " + internalServerSetting.WorkPort);
+                    return false;
+                }
+
+                if (internalServerSetting.WorkProtocol.ToLower().Contains("simple-http"))
+                {
+                    m_InternalServer = new SimpleHttpServer(this, m_Logger);
+                }
+                if (m_InternalServer == null) m_InternalServer = new HttpServer(this, m_Logger);
+
+                if (publicServerSetting != null && publicServerSetting.WorkPort > 0)
+                {
+                    if (publicServerSetting.WorkProtocol.ToLower().Contains("http"))
                     {
-                        m_PublicServer = new SimpleHttpServer(this, m_Logger, flags, publicServerSetting.AllowOrigin);
+                        var flags = RequestContext.FLAG_PUBLIC;
+                        if (publicServerSetting.AllowParentPath) flags = flags | RequestContext.FLAG_ALLOW_PARENT_PATH;
+                        if (publicServerSetting.WorkProtocol.ToLower().Contains("simple-http"))
+                        {
+                            m_PublicServer = new SimpleHttpServer(this, m_Logger, flags, publicServerSetting.AllowOrigin);
+                        }
+                        if (m_PublicServer == null) m_PublicServer = new HttpServer(this, m_Logger, flags, publicServerSetting.AllowOrigin);
                     }
-                    if (m_PublicServer == null) m_PublicServer = new HttpServer(this, m_Logger, flags, publicServerSetting.AllowOrigin);
-                }
-                else if (publicServerSetting.WorkProtocol.ToLower().Contains("ws"))
-                {
-                    m_PublicServer = new WebSocketServer(this, m_Logger, RequestContext.FLAG_PUBLIC);
-                }
-                if (OnCreatePublicServer != null) m_PublicServer = OnCreatePublicServer(m_PublicServer);
-            }
-
-            bool isInternalServerOK = true;
-            bool isPublicServerOK = true;
-
-            if (m_InternalServer != null && internalServerSetting != null)
-            {
-                string cert = internalServerSetting.CertFile;
-                if (internalServerSetting.WorkProtocol.ToLower().Contains("https"))
-                {
-                    // if need ssl then just do NOT let "cert" be empty, may set it with "https"
-                    if (String.IsNullOrEmpty(cert)) cert = "https";
+                    else if (publicServerSetting.WorkProtocol.ToLower().Contains("ws"))
+                    {
+                        m_PublicServer = new WebSocketServer(this, m_Logger, RequestContext.FLAG_PUBLIC);
+                    }
+                    if (OnCreatePublicServer != null) m_PublicServer = OnCreatePublicServer(m_PublicServer);
                 }
 
-                isInternalServerOK = m_InternalServer.Start(internalServerSetting.WorkPort, internalServerSetting.WorkIp,
-                                                            cert, internalServerSetting.CertKey);
-                if (isInternalServerOK)
+                bool isInternalServerOK = true;
+                bool isPublicServerOK = true;
+
+                if (m_InternalServer != null && internalServerSetting != null)
                 {
-                    if (internalServerSetting.AccessUrl.Length > 0) m_InternalUrl = internalServerSetting.AccessUrl;
-                    else m_InternalUrl = m_InternalServer.GetProtocol() + @"://" + m_InternalServer.GetIp() + ":" + m_InternalServer.GetPort();
+                    string cert = internalServerSetting.CertFile;
+                    if (internalServerSetting.WorkProtocol.ToLower().Contains("https"))
+                    {
+                        // if need ssl then just do NOT let "cert" be empty, may set it with "https"
+                        if (String.IsNullOrEmpty(cert)) cert = "https";
+                    }
+
+                    isInternalServerOK = m_InternalServer.Start(internalServerSetting.WorkPort, internalServerSetting.WorkIp,
+                                                                cert, internalServerSetting.CertKey);
+                    if (isInternalServerOK)
+                    {
+                        if (internalServerSetting.AccessUrl.Length > 0) m_InternalUrl = internalServerSetting.AccessUrl;
+                        else m_InternalUrl = m_InternalServer.GetProtocol() + @"://" + m_InternalServer.GetIp() + ":" + m_InternalServer.GetPort();
+                    }
+                    else
+                    {
+                        await Stop();
+                        return false;
+                    }
                 }
                 else
                 {
                     await Stop();
                     return false;
                 }
-            }
-            else
-            {
-                await Stop();
-                return false;
-            }
 
-            if (isInternalServerOK && isPublicServerOK)
-            {
-                m_UpdateLocalServicesTimer = new Timer(UpdateLocalServices, m_LocalServiceFiles, 10, 1000 * 10);
-                m_UploadLocalServerInfoTimer = new Timer(UploadLocalServerInfo, m_LocalServices, 600, 1000 * 1);
-                m_UpdateRemoteServicesTimer = new Timer(UpdateRemoteServices, m_RemoteServices, 800, 1000 * 2);
-            }
-
-            await Task.Delay(100);
-
-            if (m_LocalServiceFiles.Count > 0)
-            {
-                for (int i = 0; i < 50; i++) // try to wait till loading local services is done (max waiting time is 5000ms)
+                if (isInternalServerOK && isPublicServerOK && m_LocalServiceFiles.Count > 0)
                 {
-                    var svclist = m_LocalServices;
-                    if (svclist == null || svclist.InternalServices == null || svclist.PublicServices == null
-                        || (svclist.InternalServices.Count <= 0 && svclist.PublicServices.Count <= 0))
+                    await UpdateLocalServicesAsync(); // let's try to load local services from files first...
+                }
+
+                await Task.Delay(100);
+
+                if (isInternalServerOK && isPublicServerOK)
+                {
+                    m_UpdateLocalServicesTimer = new Timer(UpdateLocalServices, m_LocalServiceFiles, 10, 1000 * 10);
+                    m_UploadLocalServerInfoTimer = new Timer(UploadLocalServerInfo, m_LocalServices, 600, 1000 * 1);
+                    m_UpdateRemoteServicesTimer = new Timer(UpdateRemoteServices, m_RemoteServices, 800, 1000 * 2);
+                }
+
+                await Task.Delay(100);
+
+                if (m_PublicServer != null && publicServerSetting != null)
+                {
+                    string cert = publicServerSetting.CertFile;
+                    if (publicServerSetting.WorkProtocol.ToLower().Contains("https"))
                     {
-                        await Task.Delay(100);
+                        // if need ssl then just do NOT let "cert" be empty, may set it with "https"
+                        if (String.IsNullOrEmpty(cert)) cert = "https";
                     }
-                    else break;
-                }
-            }
-            
-            if (m_PublicServer != null && publicServerSetting != null)
-            {
-                string cert = publicServerSetting.CertFile;
-                if (publicServerSetting.WorkProtocol.ToLower().Contains("https"))
-                {
-                    // if need ssl then just do NOT let "cert" be empty, may set it with "https"
-                    if (String.IsNullOrEmpty(cert)) cert = "https";
-                }
 
-                isPublicServerOK = m_PublicServer.Start(publicServerSetting.WorkPort, publicServerSetting.WorkIp,
-                                                        cert, publicServerSetting.CertKey);
-                if (isPublicServerOK)
-                {
-                    var protocol = m_PublicServer.GetProtocol();
-
-                    if (publicServerSetting.AccessUrl.Length > 0) m_PublicUrl = publicServerSetting.AccessUrl;
-                    else m_PublicUrl = protocol + @"://" + m_PublicServer.GetIp() + ":" + m_PublicServer.GetPort();
-
-                    if (protocol == "http") m_PublicProtocol = PROTOCOL_HTTP;
-                    else if (protocol == "https") m_PublicProtocol = PROTOCOL_HTTPS;
-                    else if (protocol == "ws") m_PublicProtocol = PROTOCOL_WS;
-                    else if (protocol == "wss") m_PublicProtocol = PROTOCOL_WSS;
-
-                    if (m_PublicProtocol == PROTOCOL_WS || m_PublicProtocol == PROTOCOL_WSS)
+                    isPublicServerOK = m_PublicServer.Start(publicServerSetting.WorkPort, publicServerSetting.WorkIp,
+                                                            cert, publicServerSetting.CertKey);
+                    if (isPublicServerOK)
                     {
-                        ServiceCollection allsvc = m_LocalServices;
-                        if (allsvc != null)
+                        var protocol = m_PublicServer.GetProtocol();
+
+                        if (publicServerSetting.AccessUrl.Length > 0) m_PublicUrl = publicServerSetting.AccessUrl;
+                        else m_PublicUrl = protocol + @"://" + m_PublicServer.GetIp() + ":" + m_PublicServer.GetPort();
+
+                        if (protocol == "http") m_PublicProtocol = PROTOCOL_HTTP;
+                        else if (protocol == "https") m_PublicProtocol = PROTOCOL_HTTPS;
+                        else if (protocol == "ws") m_PublicProtocol = PROTOCOL_WS;
+                        else if (protocol == "wss") m_PublicProtocol = PROTOCOL_WSS;
+
+                        if (m_PublicProtocol == PROTOCOL_WS || m_PublicProtocol == PROTOCOL_WSS)
                         {
-                            IActionCaller svc = null;
-                            if (allsvc.InternalServices.TryGetValue("network", out svc))
+                            ServiceCollection allsvc = m_LocalServices;
+                            if (allsvc != null)
                             {
-                                await svc.Call("set-server", m_PublicServer, false);
+                                IActionCaller svc = null;
+                                if (allsvc.InternalServices.TryGetValue("network", out svc))
+                                {
+                                    await svc.Call("set-server", m_PublicServer, false);
+                                }
                             }
                         }
                     }
+                    else
+                    {
+                        await Stop();
+                        return false;
+                    }
                 }
-                else
-                {
-                    await Stop();
-                    return false;
-                }
-            }
 
-            return isInternalServerOK && isPublicServerOK;
+                return isInternalServerOK && isPublicServerOK;
+
+            }
+            finally
+            {
+                m_IsStarting = false;
+            }
 
         }
 
@@ -251,92 +264,92 @@ namespace MySharpServer.Framework
         {
             if (publicServerSetting == null) return false;
 
-            //m_Logger.Info("Call Standalone Start()");
-
             await Stop();
 
-            //m_Logger.Info("After call Stop() in Standalone Start()");
+            if (m_IsStarting) return false;
+            m_IsStarting = true;
 
-            SetServerInfoStorage("");
-
-            if (publicServerSetting != null && publicServerSetting.WorkPort > 0)
+            try
             {
-                if (publicServerSetting.WorkProtocol.ToLower().Contains("http"))
+                SetServerInfoStorage("");
+
+                if (publicServerSetting != null && publicServerSetting.WorkPort > 0)
                 {
-                    var flags = RequestContext.FLAG_PUBLIC;
-                    if (publicServerSetting.AllowParentPath) flags = flags | RequestContext.FLAG_ALLOW_PARENT_PATH;
-                    if (publicServerSetting.WorkProtocol.ToLower().Contains("simple-http"))
+                    if (publicServerSetting.WorkProtocol.ToLower().Contains("http"))
                     {
-                        m_PublicServer = new SimpleHttpServer(this, m_Logger, flags, publicServerSetting.AllowOrigin);
+                        var flags = RequestContext.FLAG_PUBLIC;
+                        if (publicServerSetting.AllowParentPath) flags = flags | RequestContext.FLAG_ALLOW_PARENT_PATH;
+                        if (publicServerSetting.WorkProtocol.ToLower().Contains("simple-http"))
+                        {
+                            m_PublicServer = new SimpleHttpServer(this, m_Logger, flags, publicServerSetting.AllowOrigin);
+                        }
+                        if (m_PublicServer == null) m_PublicServer = new HttpServer(this, m_Logger, flags, publicServerSetting.AllowOrigin);
                     }
-                    if (m_PublicServer == null) m_PublicServer = new HttpServer(this, m_Logger, flags, publicServerSetting.AllowOrigin);
-                }
-                else if (publicServerSetting.WorkProtocol.ToLower().Contains("ws"))
-                {
-                    m_PublicServer = new WebSocketServer(this, m_Logger, RequestContext.FLAG_PUBLIC);
-                }
-                if (OnCreatePublicServer != null) m_PublicServer = OnCreatePublicServer(m_PublicServer);
-            }
-
-            bool isPublicServerOK = true;
-
-            if (isPublicServerOK)
-            {
-                m_UpdateLocalServicesTimer = new Timer(UpdateLocalServices, m_LocalServiceFiles, 10, 1000 * 10);
-                m_UploadLocalServerInfoTimer = new Timer(UploadLocalServerInfo, m_LocalServices, 600, 1000 * 1);
-                m_UpdateRemoteServicesTimer = new Timer(UpdateRemoteServices, m_RemoteServices, 800, 1000 * 2);
-            }
-
-            await Task.Delay(100);
-
-            if (m_LocalServiceFiles.Count > 0)
-            {
-                for (int i = 0; i < 50; i++) // try to wait till loading local services is done (max waiting time is 5000ms)
-                {
-                    var svclist = m_LocalServices;
-                    if (svclist == null || svclist.InternalServices == null || svclist.PublicServices == null
-                        || (svclist.InternalServices.Count <= 0 && svclist.PublicServices.Count <= 0))
+                    else if (publicServerSetting.WorkProtocol.ToLower().Contains("ws"))
                     {
-                        await Task.Delay(100);
+                        m_PublicServer = new WebSocketServer(this, m_Logger, RequestContext.FLAG_PUBLIC);
                     }
-                    else break;
+                    if (OnCreatePublicServer != null) m_PublicServer = OnCreatePublicServer(m_PublicServer);
                 }
-            }
 
-            if (m_PublicServer != null && publicServerSetting != null)
-            {
-                string cert = publicServerSetting.CertFile;
-                if (publicServerSetting.WorkProtocol.ToLower().Contains("https"))
+                bool isPublicServerOK = true;
+
+                if (isPublicServerOK && m_LocalServiceFiles.Count > 0)
                 {
-                    // if need ssl then just do NOT let "cert" be empty, may set it with "https"
-                    if (String.IsNullOrEmpty(cert)) cert = "https";
+                    await UpdateLocalServicesAsync(); // let's try to load local services from files first...
                 }
 
-                isPublicServerOK = m_PublicServer.Start(publicServerSetting.WorkPort, publicServerSetting.WorkIp,
-                                                        cert, publicServerSetting.CertKey);
+                await Task.Delay(100);
+
                 if (isPublicServerOK)
                 {
-                    var protocol = m_PublicServer.GetProtocol();
+                    m_UpdateLocalServicesTimer = new Timer(UpdateLocalServices, m_LocalServiceFiles, 10, 1000 * 10);
+                    m_UploadLocalServerInfoTimer = new Timer(UploadLocalServerInfo, m_LocalServices, 600, 1000 * 1);
+                    m_UpdateRemoteServicesTimer = new Timer(UpdateRemoteServices, m_RemoteServices, 800, 1000 * 2);
+                }
 
-                    if (publicServerSetting.AccessUrl.Length > 0) m_PublicUrl = publicServerSetting.AccessUrl;
-                    else m_PublicUrl = protocol + @"://" + m_PublicServer.GetIp() + ":" + m_PublicServer.GetPort();
+                await Task.Delay(100);
 
-                    if (protocol == "http") m_PublicProtocol = PROTOCOL_HTTP;
-                    else if (protocol == "https") m_PublicProtocol = PROTOCOL_HTTPS;
-                    else if (protocol == "ws") m_PublicProtocol = PROTOCOL_WS;
-                    else if (protocol == "wss") m_PublicProtocol = PROTOCOL_WSS;
-
-                    if (m_PublicProtocol == PROTOCOL_WS || m_PublicProtocol == PROTOCOL_WSS)
+                if (m_PublicServer != null && publicServerSetting != null)
+                {
+                    string cert = publicServerSetting.CertFile;
+                    if (publicServerSetting.WorkProtocol.ToLower().Contains("https"))
                     {
-                        ServiceCollection allsvc = m_LocalServices;
-                        if (allsvc != null)
+                        // if need ssl then just do NOT let "cert" be empty, may set it with "https"
+                        if (String.IsNullOrEmpty(cert)) cert = "https";
+                    }
+
+                    isPublicServerOK = m_PublicServer.Start(publicServerSetting.WorkPort, publicServerSetting.WorkIp,
+                                                            cert, publicServerSetting.CertKey);
+                    if (isPublicServerOK)
+                    {
+                        var protocol = m_PublicServer.GetProtocol();
+
+                        if (publicServerSetting.AccessUrl.Length > 0) m_PublicUrl = publicServerSetting.AccessUrl;
+                        else m_PublicUrl = protocol + @"://" + m_PublicServer.GetIp() + ":" + m_PublicServer.GetPort();
+
+                        if (protocol == "http") m_PublicProtocol = PROTOCOL_HTTP;
+                        else if (protocol == "https") m_PublicProtocol = PROTOCOL_HTTPS;
+                        else if (protocol == "ws") m_PublicProtocol = PROTOCOL_WS;
+                        else if (protocol == "wss") m_PublicProtocol = PROTOCOL_WSS;
+
+                        if (m_PublicProtocol == PROTOCOL_WS || m_PublicProtocol == PROTOCOL_WSS)
                         {
-                            IActionCaller svc = null;
-                            if (allsvc.InternalServices.TryGetValue("network", out svc))
+                            ServiceCollection allsvc = m_LocalServices;
+                            if (allsvc != null)
                             {
-                                await svc.Call("set-server", m_PublicServer, false);
+                                IActionCaller svc = null;
+                                if (allsvc.InternalServices.TryGetValue("network", out svc))
+                                {
+                                    await svc.Call("set-server", m_PublicServer, false);
+                                }
                             }
                         }
+                    }
+                    else
+                    {
+                        await Stop();
+                        return false;
                     }
                 }
                 else
@@ -344,48 +357,61 @@ namespace MySharpServer.Framework
                     await Stop();
                     return false;
                 }
+
+                return isPublicServerOK;
+
             }
-            else
+            finally
             {
-                await Stop();
-                return false;
+                m_IsStarting = false;
             }
 
-            return isPublicServerOK;
         }
 
         public async Task Stop()
         {
             //m_Logger.Info("Call Stop()");
 
-            if (m_UpdateLocalServicesTimer != null) { m_UpdateLocalServicesTimer.Dispose(); m_UpdateLocalServicesTimer = null; }
-            if (m_UploadLocalServerInfoTimer != null) { m_UploadLocalServerInfoTimer.Dispose(); m_UploadLocalServerInfoTimer = null; }
-            if (m_UpdateRemoteServicesTimer != null) { m_UpdateRemoteServicesTimer.Dispose(); m_UpdateRemoteServicesTimer = null; }
+            if (m_IsStopping) return;
+            m_IsStopping = true;
 
-            if (m_PublicServer != null) { m_PublicServer.Stop(); m_PublicServer = null; }
-            if (m_InternalServer != null) { m_InternalServer.Stop(); m_InternalServer = null; }
-            
-            foreach (var item in m_AllCreatedServices)
+            try
             {
-                var oldone = m_AllCreatedServices[item.Key] as ServiceWrapper;
-                if (oldone != null)
+                if (m_UpdateLocalServicesTimer != null) { m_UpdateLocalServicesTimer.Dispose(); m_UpdateLocalServicesTimer = null; }
+                if (m_UploadLocalServerInfoTimer != null) { m_UploadLocalServerInfoTimer.Dispose(); m_UploadLocalServerInfoTimer = null; }
+                if (m_UpdateRemoteServicesTimer != null) { m_UpdateRemoteServicesTimer.Dispose(); m_UpdateRemoteServicesTimer = null; }
+
+                if (m_PublicServer != null) { m_PublicServer.Stop(); m_PublicServer = null; }
+                if (m_InternalServer != null) { m_InternalServer.Stop(); m_InternalServer = null; }
+
+                foreach (var item in m_AllCreatedServices)
                 {
-                    string errmsg = await oldone.Unload(this);
-                    if (!String.IsNullOrEmpty(errmsg))
+                    var oldone = m_AllCreatedServices[item.Key] as ServiceWrapper;
+                    if (oldone != null)
                     {
-                        m_Logger.Error("Failed to unload service [" + item.Key + "] - error: " + errmsg);
-                        //Console.WriteLine("Failed to unload service [" + item.Key + "] - error: " + errmsg);
-                    }
-                    else
-                    {
-                        Console.WriteLine("Unloaded service [" + item.Key + "]");
+                        string errmsg = await oldone.Unload(this);
+                        if (!String.IsNullOrEmpty(errmsg))
+                        {
+                            m_Logger.Error("Failed to unload service [" + item.Key + "] - error: " + errmsg);
+                            //Console.WriteLine("Failed to unload service [" + item.Key + "] - error: " + errmsg);
+                        }
+                        else
+                        {
+                            Console.WriteLine("Unloaded service [" + item.Key + "]");
+                        }
                     }
                 }
+
+                m_AllCreatedServices.Clear();
+
+                ResetLocalServiceFiles();
+
+            }
+            finally
+            {
+                m_IsStopping = false;
             }
 
-            m_AllCreatedServices.Clear();
-
-            ResetLocalServiceFiles();
         }
 
         public bool IsWorking()
@@ -672,7 +698,7 @@ namespace MySharpServer.Framework
             //m_Logger.Info("Reset service library file: " + svcfile);
         }
 
-        private async void UpdateLocalServices(object param)
+        private async Task UpdateLocalServicesAsync()
         {
             if (m_PublicServer == null && m_InternalServer == null) return;
 
@@ -800,7 +826,7 @@ namespace MySharpServer.Framework
 
                     m_LocalServices = new ServiceCollection(publicServices, internalServices);
                 }
-                
+
             }
             catch (Exception ex)
             {
@@ -811,6 +837,11 @@ namespace MySharpServer.Framework
             {
                 m_IsUpdatingLocalServices = false;
             }
+        }
+
+        private async void UpdateLocalServices(object param)
+        {
+            await UpdateLocalServicesAsync();
         }
 
         public ServiceCollection GetLocalServices()
@@ -1011,4 +1042,238 @@ namespace MySharpServer.Framework
         }
 
     }
+
+    public class CommonServerNode
+    {
+        public ServerNode Node { get; private set; }
+
+        public ServerSetting InternalSetting { get; private set; }
+        public ServerSetting PublicSetting { get; private set; }
+
+        public string NodeName { get; private set; }
+        public string GroupName { get; private set; }
+        public string StorageName { get; private set; }
+
+        public List<string> ServiceFileNames { get; private set; }
+
+        public CommonServerNode()
+        {
+            Node = null;
+
+            PublicSetting = null;
+            InternalSetting = null;
+
+            NodeName = "";
+            GroupName = "";
+            StorageName = "";
+
+            ServiceFileNames = new List<string>();
+        }
+
+        public bool IsWorking()
+        {
+            var node = Node;
+            if (node == null) return false;
+            return node.IsWorking();
+        }
+
+        public async Task StartAsync(CommonServerNodeSetting setting, string storageName, IServerLogger logger = null)
+        {
+            PublicSetting = setting.PublicServerSetting;
+            InternalSetting = setting.InternalServerSetting;
+
+            NodeName = setting.NodeName;
+            GroupName = setting.GroupName;
+
+            StorageName = storageName;
+            if (String.IsNullOrEmpty(StorageName)) StorageName = "";
+
+            var fileNames = setting.Services.Split(',');
+            ServiceFileNames.Clear();
+            ServiceFileNames.AddRange(fileNames);
+
+            if (Node == null) Node = new ServerNode(NodeName, GroupName, logger);
+
+            if (Node != null && !Node.IsWorking())
+            {
+                Node.SetServerInfoStorage(StorageName);
+                Node.ResetLocalServiceFiles(ServiceFileNames);
+
+                if (String.IsNullOrEmpty(StorageName))
+                {
+                    await Node.StartStandaloneMode(PublicSetting);
+                }
+                else
+                {
+                    await Node.Start(InternalSetting, PublicSetting);
+                }
+
+                await Task.Delay(100);
+
+                if (Node.IsWorking())
+                {
+                    var svrLogger = Node.GetLogger();
+                    if (svrLogger != null)
+                    {
+                        svrLogger.Info("Server Started - " + NodeName);
+                        if (Node.IsStandalone()) svrLogger.Info("Server is in standalone mode");
+                        else svrLogger.Info("Internal URL: " + Node.GetInternalAccessUrl());
+                        svrLogger.Info("Public URL: " + Node.GetPublicAccessUrl());
+                    }
+                }
+            }
+        }
+
+        public async void Start(CommonServerNodeSetting setting, string storageName, IServerLogger logger = null)
+        {
+            await StartAsync(setting, storageName, logger);
+        }
+
+        public async Task StopAsync()
+        {
+            if (Node != null && Node.IsWorking())
+            {
+                await Node.Stop();
+                await Task.Delay(100);
+
+                if (!Node.IsWorking())
+                {
+                    var svrLogger = Node.GetLogger();
+                    if (svrLogger != null)
+                    {
+                        svrLogger.Info("Server Stopped - " + NodeName);
+                    }
+                }
+            }
+        }
+
+        public async void Stop()
+        {
+            await StopAsync();
+        }
+    }
+
+    public class CommonServerContainer
+    {
+        public string StorageName { get; private set; }
+
+        public Dictionary<string, CommonServerNode> ServerNodes { get; private set; }
+
+        public CommonServerContainer()
+        {
+            StorageName = "";
+            ServerNodes = new Dictionary<string, CommonServerNode>();
+        }
+
+        public bool IsWorking()
+        {
+            var nodes = ServerNodes;
+            foreach (var item in nodes)
+            {
+                var node = item.Value.Node;
+                if (node != null)
+                {
+                    if (node.IsWorking()) return true;
+                }
+            }
+            return false;
+        }
+
+        public async Task StopAsync()
+        {
+            var nodes = ServerNodes;
+            foreach (var item in nodes)
+            {
+                if (item.Value.Node != null)
+                {
+                    await item.Value.StopAsync();
+                }
+            }
+            await Task.Delay(100);
+        }
+
+        public void Stop()
+        {
+            var nodes = ServerNodes;
+            foreach (var item in nodes)
+            {
+                if (item.Value.Node != null)
+                {
+                    Task.Factory.StartNew(() => item.Value.Stop()).Wait();
+
+                    Thread.Sleep(100); // make sure the action has been started (necessary?)
+
+                    for (int i = 0; i < 300; i++) // try to wait till stopping is done (max waiting time is 30s)
+                    {
+                        if (item.Value.Node.IsStopping()) Thread.Sleep(100);
+                        else break;
+                    }
+                }
+            }
+            Thread.Sleep(100);
+        }
+
+        public async Task StartAsync(CommonServerContainerSetting setting, IServerLogger logger = null)
+        {
+            await StopAsync();
+
+            var storage = String.IsNullOrEmpty(setting.ServerInfoStorage) 
+                            ? "" : String.Copy(setting.ServerInfoStorage);
+
+            var nodes = new Dictionary<string, CommonServerNode>();
+            foreach(var itemSetting in setting.ServerNodeSettings)
+            {
+                if (nodes.ContainsKey(itemSetting.NodeName)) continue;
+
+                CommonServerNode node = new CommonServerNode();
+                await node.StartAsync(itemSetting, storage, logger);
+
+                nodes.Add(itemSetting.NodeName, node);
+            }
+
+            await Task.Delay(100);
+
+            ServerNodes = nodes;
+            StorageName = storage;
+        }
+
+        public void Start(CommonServerContainerSetting setting, IServerLogger logger = null)
+        {
+            Stop();
+
+            var storage = String.IsNullOrEmpty(setting.ServerInfoStorage)
+                            ? "" : String.Copy(setting.ServerInfoStorage);
+
+            var nodes = new Dictionary<string, CommonServerNode>();
+            foreach (var itemSetting in setting.ServerNodeSettings)
+            {
+                if (nodes.ContainsKey(itemSetting.NodeName)) continue;
+
+                CommonServerNode node = new CommonServerNode();
+
+                Task.Factory.StartNew(() => node.Start(itemSetting, storage, logger)).Wait();
+
+                Thread.Sleep(100); // make sure the action has been started (necessary?)
+
+                if (node.Node != null)
+                {
+                    for (int i = 0; i < 300; i++) // try to wait till starting is done (max waiting time is 30s)
+                    {
+                        if (node.Node.IsStarting() || node.Node.IsStopping()) Thread.Sleep(100);
+                        else break;
+                    }
+                }
+
+                nodes.Add(itemSetting.NodeName, node);
+            }
+
+            Thread.Sleep(100);
+
+            ServerNodes = nodes;
+            StorageName = storage;
+
+        }
+    }
+
+
 }

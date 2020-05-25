@@ -39,4 +39,40 @@ namespace MySharpServer.Common
             CertKey = "";
         }
     }
+
+    public class CommonServerNodeSetting
+    {
+        public ServerSetting InternalServerSetting { get; set; }
+        public ServerSetting PublicServerSetting { get; set; }
+
+        public string NodeName { get; set; }
+        public string GroupName { get; set; }
+
+        public string Services { get; set; }
+
+        public CommonServerNodeSetting()
+        {
+            InternalServerSetting = null;
+            PublicServerSetting = null;
+            
+            NodeName = "";
+            GroupName = "";
+
+            Services = "";
+        }
+    }
+
+    public class CommonServerContainerSetting
+    {
+        // may set it to empty string if want to run in standalone mode
+        public string ServerInfoStorage { get; set; }
+
+        public List<CommonServerNodeSetting> ServerNodeSettings { get; set; }
+
+        public CommonServerContainerSetting()
+        {
+            ServerInfoStorage = "";
+            ServerNodeSettings = new List<CommonServerNodeSetting>();
+        }
+    }
 }

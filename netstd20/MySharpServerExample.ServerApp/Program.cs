@@ -16,6 +16,7 @@ namespace MySharpServerExample.ServerApp
 {
     class Program
     {
+        /*
         static ServerNode m_ServerNode = null;
 
         static ServerSetting m_InternalSetting = null;
@@ -27,6 +28,10 @@ namespace MySharpServerExample.ServerApp
         static string m_StorageName = "";
 
         static List<string> m_ServiceFileNames = new List<string>();
+        */
+
+        static CommonServerContainerSetting m_ServerSetting = null;
+        static CommonServerContainer m_Server = null;
 
         static void Main(string[] args)
         {
@@ -38,6 +43,7 @@ namespace MySharpServerExample.ServerApp
 
             var allKeys = appSettings.AllKeys;
 
+            /*
             foreach (var key in allKeys)
             {
                 if (key == "InternalServer") m_InternalSetting = JsonConvert.DeserializeObject<ServerSetting>(appSettings[key]);
@@ -61,9 +67,22 @@ namespace MySharpServerExample.ServerApp
                 m_ServerNode.SetServerInfoStorage(m_StorageName);
                 m_ServerNode.ResetLocalServiceFiles(m_ServiceFileNames);
             }
+            */
+
+            foreach (var key in allKeys)
+            {
+                if (key == "AppServerSetting")
+                    m_ServerSetting = JsonConvert.DeserializeObject<CommonServerContainerSetting>(appSettings[key]);
+            }
+
+            if (m_Server == null && m_ServerSetting != null)
+            {
+                m_Server = new CommonServerContainer();
+            }
 
             Console.WriteLine("Start server...");
 
+            /*
             Task.Run(async () =>
             {
                 if (m_ServerNode != null && !m_ServerNode.IsWorking())
@@ -88,6 +107,26 @@ namespace MySharpServerExample.ServerApp
                 Console.WriteLine("Done!");
 
             }).Wait();
+            */
+
+            if (m_Server != null && !m_Server.IsWorking() && m_ServerSetting != null)
+            {
+                Console.WriteLine("Starting...");
+                m_Server.Start(m_ServerSetting, CommonLog.GetLogger());
+
+                Console.WriteLine();
+                Console.WriteLine("Press any key to quit...");
+                Console.ReadLine();
+
+                Console.WriteLine("Stop server...");
+                if (m_Server != null) m_Server.Stop();
+
+                Console.WriteLine();
+                Console.WriteLine("Press any key again to end the process");
+                Console.ReadLine();
+
+                Console.WriteLine("- END -");
+            }
         }
     }
 }

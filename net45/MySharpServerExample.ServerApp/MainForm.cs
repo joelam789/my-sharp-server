@@ -19,6 +19,7 @@ namespace MySharpServerExample.ServerApp
 {
     public partial class MainForm : Form
     {
+        /*
         ServerNode m_ServerNode = null;
 
         ServerSetting m_InternalSetting = null;
@@ -30,6 +31,10 @@ namespace MySharpServerExample.ServerApp
         string m_StorageName = "";
 
         List<string> m_ServiceFileNames = new List<string>();
+        */
+
+        CommonServerContainerSetting m_ServerSetting = null;
+        CommonServerContainer m_Server = null;
 
         public MainForm()
         {
@@ -44,6 +49,7 @@ namespace MySharpServerExample.ServerApp
 
             var allKeys = appSettings.AllKeys;
 
+            /*
             foreach (var key in allKeys)
             {
                 if (key == "InternalServer") m_InternalSetting = JsonConvert.DeserializeObject<ServerSetting>(appSettings[key]);
@@ -67,15 +73,34 @@ namespace MySharpServerExample.ServerApp
                 m_ServerNode.SetServerInfoStorage(m_StorageName);
                 m_ServerNode.ResetLocalServiceFiles(m_ServiceFileNames);
             }
+            */
+
+            foreach (var key in allKeys)
+            {
+                if (key == "AppServerSetting")
+                    m_ServerSetting = JsonConvert.DeserializeObject<CommonServerContainerSetting>(appSettings[key]);
+            }
+
+            if (m_Server == null && m_ServerSetting != null)
+            {
+                m_Server = new CommonServerContainer();
+            }
+
         }
 
-        private async void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if (m_ServerNode != null) await m_ServerNode.Stop();
+            //if (m_ServerNode != null) await m_ServerNode.Stop();
+
+            CommonLog.Info("Exiting...");
+            this.Text = this.Text + " - Exiting...";
+            if (m_Server != null) m_Server.Stop();
+
         }
 
         private async void btnStart_Click(object sender, EventArgs e)
         {
+            /*
             if (m_ServerNode != null && !m_ServerNode.IsWorking())
             {
                 CommonLog.Info("Starting...");
@@ -89,11 +114,21 @@ namespace MySharpServerExample.ServerApp
                     CommonLog.Info("Public URL: " + m_ServerNode.GetPublicAccessUrl());
                 }
             }
+            */
+
+            if (m_Server != null && !m_Server.IsWorking() && m_ServerSetting != null)
+            {
+                CommonLog.Info("Starting...");
+                await m_Server.StartAsync(m_ServerSetting, CommonLog.GetLogger());
+            }
+
         }
 
         private async void btnStop_Click(object sender, EventArgs e)
         {
-            if (m_ServerNode != null && m_ServerNode.IsWorking()) await m_ServerNode.Stop();
+            //if (m_ServerNode != null && m_ServerNode.IsWorking()) await m_ServerNode.Stop();
+            if (m_Server != null && m_Server.IsWorking()) await m_Server.StopAsync();
         }
+
     }
 }
