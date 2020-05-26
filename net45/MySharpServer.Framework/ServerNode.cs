@@ -1199,7 +1199,8 @@ namespace MySharpServer.Framework
             {
                 if (item.Value.Node != null)
                 {
-                    Task.Factory.StartNew(() => item.Value.Stop()).Wait();
+                    //Task.Factory.StartNew(async () => await item.Value.StopAsync()).Wait();
+                    Task.Factory.StartNew(() => item.Value.Stop()).Wait(); // seems better?
 
                     Thread.Sleep(100); // make sure the action has been started (necessary?)
 
@@ -1251,7 +1252,8 @@ namespace MySharpServer.Framework
 
                 CommonServerNode node = new CommonServerNode();
 
-                Task.Factory.StartNew(() => node.Start(itemSetting, storage, logger)).Wait();
+                //Task.Factory.StartNew(async () => await node.StartAsync(itemSetting, storage, logger)).Wait();
+                Task.Factory.StartNew(() => node.Start(itemSetting, storage, logger)).Wait(); // seems better?
 
                 Thread.Sleep(100); // make sure the action has been started (necessary?)
 
