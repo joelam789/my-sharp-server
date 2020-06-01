@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -285,17 +286,21 @@ namespace MySharpServer.Common
                 {
                     List<Task> tasks = new List<Task>();
                     Dictionary<string, string> mappedInput = mapFunc(data, remoteServerList);
-                    Dictionary<string, string> mappedOutput = new Dictionary<string, string>();
+                    var mappedOutput = new ConcurrentDictionary<string, string>();
 
                     //int avgTimeout = timeout / mappedInput.Count;
                     //if (avgTimeout < 0) avgTimeout = 0;
                     //if (avgTimeout > 0) avgTimeout += 10; // ...
+
+                    foreach (var mappedItem in mappedInput)
+                        mappedOutput.TryAdd(mappedItem.Key, null);
 
                     foreach (var remoteInfo in remoteServerList)
                     {
                         if (!mappedInput.ContainsKey(remoteInfo)) continue;
 
                         string currentData = mappedInput[remoteInfo];
+                        mappedOutput[remoteInfo] = null;
 
                         var remoteInfoParts = remoteInfo.Split('|');
                         if (remoteInfoParts.Length >= 2)
@@ -308,13 +313,10 @@ namespace MySharpServer.Common
                                 try
                                 {
                                     string reply = await Call(remoteUrl, service, action, currentData, svrKey, timeout);
-                                    mappedOutput.Add(remoteInfo, reply);
+                                    mappedOutput[remoteInfo] = reply;
                                 }
-                                catch
-                                {
-                                    mappedOutput.Add(remoteInfo, null);
-                                }
-                                
+                                catch { }
+
                             }));
                         }
                         
@@ -325,8 +327,10 @@ namespace MySharpServer.Common
                         await Task.WhenAll(tasks.ToArray());
                     }
                     catch { }
-                    
-                    return reduceFunc(mappedOutput);
+
+                    var output = new Dictionary<string, string>(mappedOutput);
+
+                    return reduceFunc(output);
 
                 }
             }
