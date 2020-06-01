@@ -252,5 +252,85 @@ namespace MySharpServer.Common
             }
             return "";
         }
+
+        public static async Task BroadcastCall(Dictionary<string, List<string>> remoteServers, string service, string action, string data, int timeout = 0)
+        {
+            List<string> remoteServerList = null;
+            if (remoteServers != null && remoteServers.TryGetValue(service, out remoteServerList))
+            {
+                if (remoteServerList != null && remoteServerList.Count > 0)
+                {
+                    foreach (var remoteInfo in remoteServerList)
+                    {
+                        var remoteInfoParts = remoteInfo.Split('|');
+                        if (remoteInfoParts.Length >= 2)
+                        {
+                            string remoteUrl = remoteInfoParts[1].Split(',')[0]; // name | url | key
+                            string svrKey = remoteInfoParts.Length >= 3 ? remoteInfoParts[2] : "";
+                            await Call(remoteUrl, service, action, data, svrKey, timeout);
+                        }
+                    }
+                }
+            }
+        }
+
+        // just an experimental function...
+        public static async Task<string> MapReduceCall(Dictionary<string, List<string>> remoteServers, string service, string action, string data, 
+            Func<string, List<string>, Dictionary<string, string>> mapFunc, Func<Dictionary<string, string>, string> reduceFunc, int timeout = 0)
+        {
+            List<string> remoteServerList = null;
+            if (remoteServers != null && remoteServers.TryGetValue(service, out remoteServerList))
+            {
+                if (remoteServerList != null && remoteServerList.Count > 0)
+                {
+                    List<Task> tasks = new List<Task>();
+                    Dictionary<string, string> mappedInput = mapFunc(data, remoteServerList);
+                    Dictionary<string, string> mappedOutput = new Dictionary<string, string>();
+
+                    //int avgTimeout = timeout / mappedInput.Count;
+                    //if (avgTimeout < 0) avgTimeout = 0;
+                    //if (avgTimeout > 0) avgTimeout += 10; // ...
+
+                    foreach (var remoteInfo in remoteServerList)
+                    {
+                        if (!mappedInput.ContainsKey(remoteInfo)) continue;
+
+                        string currentData = mappedInput[remoteInfo];
+
+                        var remoteInfoParts = remoteInfo.Split('|');
+                        if (remoteInfoParts.Length >= 2)
+                        {
+                            string remoteUrl = remoteInfoParts[1].Split(',')[0]; // name | url | key
+                            string svrKey = remoteInfoParts.Length >= 3 ? remoteInfoParts[2] : "";
+
+                            tasks.Add(Task.Run(async () =>
+                            {
+                                try
+                                {
+                                    string reply = await Call(remoteUrl, service, action, currentData, svrKey, timeout);
+                                    mappedOutput.Add(remoteInfo, reply);
+                                }
+                                catch
+                                {
+                                    mappedOutput.Add(remoteInfo, null);
+                                }
+                                
+                            }));
+                        }
+                        
+                    }
+
+                    try
+                    {
+                        await Task.WhenAll(tasks.ToArray());
+                    }
+                    catch { }
+                    
+                    return reduceFunc(mappedOutput);
+
+                }
+            }
+            return "";
+        }
     }
 }
