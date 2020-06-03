@@ -1099,7 +1099,7 @@ namespace MySharpServer.Framework
                 Node.SetServerInfoStorage(StorageName);
                 Node.ResetLocalServiceFiles(ServiceFileNames);
 
-                if (String.IsNullOrEmpty(StorageName))
+                if (String.IsNullOrEmpty(StorageName) || InternalSetting == null)
                 {
                     await Node.StartStandaloneMode(PublicSetting);
                 }
