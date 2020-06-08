@@ -254,8 +254,12 @@ namespace MySharpServer.Common
             return "";
         }
 
-        public static async Task BroadcastCall(Dictionary<string, List<string>> remoteServers, string service, string action, string data, int timeout = 0)
+        public static async Task<Dictionary<string, string>> BroadcastCall(Dictionary<string, List<string>> remoteServers, string service, string action, string data, int timeout = 0)
         {
+            List<Task> tasks = new List<Task>();
+            Dictionary<string, string> results = null;
+            var mappedOutput = new ConcurrentDictionary<string, string>();
+
             List<string> remoteServerList = null;
             if (remoteServers != null && remoteServers.TryGetValue(service, out remoteServerList))
             {
@@ -268,11 +272,32 @@ namespace MySharpServer.Common
                         {
                             string remoteUrl = remoteInfoParts[1].Split(',')[0]; // name | url | key
                             string svrKey = remoteInfoParts.Length >= 3 ? remoteInfoParts[2] : "";
-                            await Call(remoteUrl, service, action, data, svrKey, timeout);
+
+                            tasks.Add(Task.Run(async () =>
+                            {
+                                try
+                                {
+                                    string result = await Call(remoteUrl, service, action, data, svrKey, timeout);
+                                    mappedOutput.TryAdd(remoteInfo, result);
+                                }
+                                catch { }
+
+                            }));
                         }
                     }
+
+                    try
+                    {
+                        await Task.WhenAll(tasks.ToArray());
+                    }
+                    catch { }
+
                 }
             }
+
+            results = new Dictionary<string, string>(mappedOutput);
+
+            return results;
         }
 
         // just an experimental function...
