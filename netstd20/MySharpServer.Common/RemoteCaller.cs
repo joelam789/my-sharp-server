@@ -254,6 +254,33 @@ namespace MySharpServer.Common
             return "";
         }
 
+        public static async Task<string> SpecifiedCall(Dictionary<string, List<string>> remoteServers, string server, string service, string action, string data, int timeout = 0)
+        {
+            List<string> remoteServerList = null;
+            if (remoteServers != null && remoteServers.TryGetValue(service, out remoteServerList))
+            {
+                if (remoteServerList != null && remoteServerList.Count > 0)
+                {
+                    foreach (var remoteInfo in remoteServerList)
+                    {
+                        var remoteInfoParts = remoteInfo.Split('|');
+                        if (remoteInfoParts.Length >= 2)
+                        {
+                            string remoteServer = remoteInfoParts[0]; // name | url | key
+                            string remoteUrl = remoteInfoParts[1].Split(',')[0]; // name | url | key
+                            string svrKey = remoteInfoParts.Length >= 3 ? remoteInfoParts[2] : "";
+
+                            if (remoteServer.Length > 0 && remoteServer == server)
+                            {
+                                return await Call(remoteUrl, service, action, data, svrKey, timeout);
+                            }
+                        }
+                    }
+                }
+            }
+            return "";
+        }
+
         public static async Task<Dictionary<string, string>> BroadcastCall(Dictionary<string, List<string>> remoteServers, string service, string action, string data, int timeout = 0)
         {
             List<Task> tasks = new List<Task>();
