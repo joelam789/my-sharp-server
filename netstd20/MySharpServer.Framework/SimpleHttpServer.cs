@@ -122,6 +122,7 @@ namespace MySharpServer.Framework
 
             if (m_Server != null)
             {
+                m_Server.SetIdleTime(Session.IO_BOTH, 5 * 60); // set max idle time to 5 mins
                 if (m_Ip.Length > 0 && m_Ip != "0.0.0.0") return m_Server.Start(m_Ip, m_Port);
                 else return m_Server.Start(m_Port);
             }
