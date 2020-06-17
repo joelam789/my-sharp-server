@@ -235,6 +235,25 @@ namespace MySharpServer.Common
             return await Call(server, service, action, data, key, timeout);
         }
 
+        public static string RandomPickPublicServiceUrl(Dictionary<string, List<string>> remoteServices, string serviceName)
+        {
+            var publicUrl = "";
+            List<string> serviceList = null;
+            if (remoteServices != null && remoteServices.TryGetValue(serviceName, out serviceList))
+            {
+                if (serviceList != null && serviceList.Count > 0)
+                {
+                    var remoteInfoParts = RandomPicker.Pick<string>(serviceList).Split('|');
+                    if (remoteInfoParts.Length >= 2) // name | url | key
+                    {
+                        var urls = remoteInfoParts[1].Split(','); // private(internal) url , public url
+                        if (urls.Length >= 2) publicUrl = urls[1];
+                    }
+                }
+            }
+            return publicUrl;
+        }
+
         public static async Task<string> RandomCall(Dictionary<string, List<string>> remoteServers, string service, string action, string data, int timeout = 0)
         {
             List<string> remoteServerList = null;
