@@ -14,7 +14,7 @@ namespace MySharpServer.Common
         static RemoteCaller()
         {
             JsonCodec = new SimpleJsonCodec();
-            DefaultTimeout = 10 * 1000; // 10 seconds
+            DefaultTimeout = 20 * 1000; // 20 seconds
             HttpConnectionLimit = Environment.ProcessorCount * 8;
         }
 
@@ -252,6 +252,31 @@ namespace MySharpServer.Common
                 }
             }
             return publicUrl;
+        }
+
+        public static string GetServerNameFromRemoteInfo(string remoteInfo)
+        {
+            if (string.IsNullOrEmpty(remoteInfo)) return "";
+
+            var remoteInfoParts = remoteInfo.Split('|');
+            if (remoteInfoParts.Length >= 1) return remoteInfoParts[0]; // name | url | key
+
+            return "";
+        }
+
+        public static string GetServerUrlFromRemoteInfo(string remoteInfo, bool needPublicUrl = false)
+        {
+            if (string.IsNullOrEmpty(remoteInfo)) return "";
+
+            var url = "";
+            var remoteInfoParts = remoteInfo.Split('|'); // name | url | key
+            if (remoteInfoParts.Length >= 2)
+            {
+                var urls = remoteInfoParts[1].Split(','); // private(internal) url , public url
+                if (needPublicUrl && urls.Length >= 2) url = urls[1];
+                else if (!needPublicUrl && urls.Length >= 1) url = urls[0];
+            }
+            return url;
         }
 
         public static async Task<string> RandomCall(Dictionary<string, List<string>> remoteServers, string service, string action, string data, int timeout = 0)
