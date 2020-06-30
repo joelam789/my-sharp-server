@@ -254,12 +254,16 @@ namespace MySharpServer.Common
             return publicUrl;
         }
 
-        public static string GetServerNameFromRemoteInfo(string remoteInfo)
+        public static string GetServerNameFromRemoteInfo(string remoteInfo, bool withGroupName = false)
         {
             if (string.IsNullOrEmpty(remoteInfo)) return "";
 
             var remoteInfoParts = remoteInfo.Split('|');
-            if (remoteInfoParts.Length >= 1) return remoteInfoParts[0]; // name | url | key
+            if (remoteInfoParts.Length >= 1)
+            {
+                if (withGroupName) return remoteInfoParts[0]; // name | url | key
+                else return remoteInfoParts[0].Split('@')[0];
+            }
 
             return "";
         }
@@ -310,7 +314,7 @@ namespace MySharpServer.Common
                         var remoteInfoParts = remoteInfo.Split('|');
                         if (remoteInfoParts.Length >= 2)
                         {
-                            string remoteServer = remoteInfoParts[0]; // name | url | key
+                            string remoteServer = remoteInfoParts[0].Split('@')[0]; // name | url | key
                             string remoteUrl = remoteInfoParts[1].Split(',')[0]; // name | url | key
                             string svrKey = remoteInfoParts.Length >= 3 ? remoteInfoParts[2] : "";
 
