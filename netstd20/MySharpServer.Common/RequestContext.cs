@@ -16,7 +16,7 @@ namespace MySharpServer.Common
 
         public IDataAccessHelper DataHelper { get; set; }
 
-        public IJsonCodec JsonCodec { get; set; }
+        public IJsonCodec JsonHelper { get; set; }
 
         public IServerLogger Logger { get; set; }
         public ServiceCollection LocalServices { get; set; }
@@ -41,7 +41,7 @@ namespace MySharpServer.Common
             Session = null;
             DataHelper = null;
 
-            JsonCodec = null;
+            JsonHelper = null;
 
             Logger = null;
             LocalServices = null;

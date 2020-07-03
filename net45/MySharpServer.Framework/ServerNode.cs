@@ -879,7 +879,7 @@ namespace MySharpServer.Framework
             else
             {
                 request.DataHelper = m_DataHelper;
-                request.JsonCodec = m_JsonCodec;
+                request.JsonHelper = m_JsonCodec;
                 request.Logger = m_Logger;
                 request.LocalServer = m_ServerName + (String.IsNullOrEmpty(m_ServerGroupName) ? "" : ("@" + m_ServerGroupName));
                 request.LocalServices = m_LocalServices;
