@@ -918,7 +918,7 @@ namespace MySharpServer.Framework
                 else
                 {
                     request.Session.BeginResponse();
-                    await request.Session.Send("{'error': '" + errormsg + "'}");
+                    await request.Session.Send(GetJsonHelper().ToJsonString(new { error = errormsg }));
                     request.Session.EndResponse();
                 }
             }
@@ -986,7 +986,7 @@ namespace MySharpServer.Framework
                     else
                     {
                         request.Session.BeginResponse();
-                        await request.Session.Send("{'error': '" + errormsg + "'}");
+                        await request.Session.Send(GetJsonHelper().ToJsonString(new { error = errormsg }));
                         request.Session.EndResponse();
                     }
                 }
@@ -1016,7 +1016,7 @@ namespace MySharpServer.Framework
                     else
                     {
                         request.Session.BeginResponse();
-                        await request.Session.Send("{'error': '" + errormsg + "'}");
+                        await request.Session.Send(GetJsonHelper().ToJsonString(new { error = errormsg }));
                         request.Session.EndResponse();
                     }
                 }
