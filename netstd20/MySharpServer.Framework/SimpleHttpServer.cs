@@ -122,7 +122,8 @@ namespace MySharpServer.Framework
 
             if (m_Server != null)
             {
-                //m_Server.SetIdleTime(Session.IO_BOTH, 5 * 60); // set max idle time to 5 mins
+                if ((Flags & RequestContext.FLAG_PUBLIC) != 0)
+                    m_Server.SetIdleTime(Session.IO_BOTH, 2 * 60); // set max idle time to 2 mins for a public server
                 if (m_Ip.Length > 0 && m_Ip != "0.0.0.0") return m_Server.Start(m_Ip, m_Port);
                 else return m_Server.Start(m_Port);
             }
@@ -232,7 +233,7 @@ namespace MySharpServer.Framework
             {
                 string content = msg.RequestUrl;
 
-                if ((m_SimpleHttpServer.Flags & RequestContext.FLAG_PUBLIC) != 0
+                if ((m_SimpleHttpServer.Flags & RequestContext.FLAG_PUBLIC) != 0 
                     && (m_SimpleHttpServer.Flags & RequestContext.FLAG_ALLOW_PARENT_PATH) != 0)
                 {
                     var usefulPath = new List<string>();

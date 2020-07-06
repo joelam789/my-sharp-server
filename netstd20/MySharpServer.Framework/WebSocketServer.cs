@@ -169,7 +169,8 @@ namespace MySharpServer.Framework
 
             if (m_Server != null)
             {
-                //m_Server.SetIdleTime(Session.IO_BOTH, 3 * 60); // set max idle time to 3 mins
+                // a heartbeat checking might be better ...
+                //m_Server.SetIdleTime(Session.IO_BOTH, 90); // set max idle time to 1.5 mins
                 if (m_Ip.Length > 0 && m_Ip != "0.0.0.0") return m_Server.Start(m_Ip, m_Port);
                 else return m_Server.Start(m_Port);
             }
@@ -324,7 +325,7 @@ namespace MySharpServer.Framework
                     m_WebSocketServer.RequestHandler.EmitLocalEvent("on-connect", clientSession);
                 }
                 catch { }
-
+                
             }
         }
 
