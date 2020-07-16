@@ -89,6 +89,11 @@ namespace MySharpServer.Common
                     var expectedType = typeof(T);
                     if (expectedType == typeof(string)) result = responseString as T;
                     else if (expectedType == typeof(IDictionary<string, object>)) result = JsonCodec.ToDictionary(responseString) as T;
+                    else if (expectedType == typeof(Tuple<int, string>))
+                    {
+                        var ret = new Tuple<int, string>((int)(((HttpWebResponse)response).StatusCode), responseString);
+                        result = ret as T;
+                    }
                     else result = JsonCodec.ToJsonObject<T>(responseString);
                     streamReader.Close();
                 }
