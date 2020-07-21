@@ -48,6 +48,8 @@ namespace MySharpServer.Framework
         private bool m_IsUploadingLocalServerInfo = false;
         private bool m_IsUpdatingRemoteServices = false;
 
+        private int m_RemoteInfoExpiryTime = 5; // in seconds
+
         private bool m_IsStarting = false;
         private bool m_IsStopping = false;
 
@@ -116,6 +118,8 @@ namespace MySharpServer.Framework
 
             try
             {
+                if (internalServerSetting.Expiration > 0) m_RemoteInfoExpiryTime = internalServerSetting.Expiration;
+
                 string internalProtocol = internalServerSetting.WorkProtocol.ToLower();
 
                 if (!internalProtocol.Contains("http"))
@@ -567,7 +571,7 @@ namespace MySharpServer.Framework
                     using (var cmd = cnn.CreateCommand())
                     {
                         cmd.CommandText = "select server_name, group_name, public_url, server_url, service_list, access_key from tbl_server_info "
-                                        + " where visibility > 0 and TIMESTAMPDIFF(SECOND, update_time, CURRENT_TIMESTAMP) <= 3 ";
+                                        + " where visibility > 0 and TIMESTAMPDIFF(SECOND, update_time, CURRENT_TIMESTAMP) <= " + m_RemoteInfoExpiryTime;
 
                         using (var reader = cmd.ExecuteReader())
                         {

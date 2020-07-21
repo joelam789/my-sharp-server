@@ -13,6 +13,8 @@ namespace MySharpServer.Common
 
         public string WorkProtocol { get; set; }
 
+        public int Expiration { get; set; }
+
         public string AccessUrl { get; set; }
 
         public string AllowOrigin { get; set; }
@@ -28,6 +30,8 @@ namespace MySharpServer.Common
             WorkIp = "0.0.0.0";
             WorkProtocol = "http";
             WorkPort = 9991;
+
+            Expiration = 5; // in seconds
 
             AccessUrl = "";
 
