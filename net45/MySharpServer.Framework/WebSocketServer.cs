@@ -59,24 +59,40 @@ namespace MySharpServer.Framework
 
         public string RemoveClientSession(WebSocketSession session)
         {
-            var sessionId = session == null ? "" : session.GetRemoteAddress();
-            if (String.IsNullOrEmpty(sessionId)) return "";
-            var groupName = session.GetSocketSession().UserData == null ? "" : session.GetSocketSession().UserData.ToString();
-            if (groupName.Length > 0)
+            var sessionId = "";
+
+            try
             {
-                lock (m_ClientGroups)
+                sessionId = session == null ? "" : session.GetRemoteAddress();
+
+            }
+            catch { }
+
+            if (String.IsNullOrEmpty(sessionId)) return "";
+
+            var groupName = "";
+            try
+            {
+                groupName = session.GetSocketSession().UserData == null ? "" : session.GetSocketSession().UserData.ToString();
+                if (groupName.Length > 0)
                 {
-                    if (m_ClientGroups.ContainsKey(groupName))
+                    lock (m_ClientGroups)
                     {
-                        m_ClientGroups[groupName].Remove(session);
+                        if (m_ClientGroups.ContainsKey(groupName))
+                        {
+                            m_ClientGroups[groupName].Remove(session);
+                        }
                     }
                 }
             }
+            catch { }
+            
             lock (m_ClientSessions)
             {
                 if (m_ClientSessions.ContainsKey(sessionId)) m_ClientSessions.Remove(sessionId);
                 m_ClientCount = m_ClientSessions.Count;
             }
+
             return sessionId + (groupName.Length > 0 ? ("@" + groupName) : "");
         }
 
@@ -335,16 +351,25 @@ namespace MySharpServer.Framework
             {
                 //var clientId = m_WebSocketServer.RemoveClientSession(session.GetRemoteIp() + ":" + session.GetRemotePort());
                 //var info = m_WebSocketServer.RequestHandler.GetName() + "@" + m_WebSocketServer.RequestHandler.GetGroup() + "|" + clientId;
-                var clientId = session.GetRemoteIp() + ":" + session.GetRemotePort();
-                var clientSession = m_WebSocketServer.FindClientSession(clientId);
+
+                string clientId = "";
+                WebSocketSession clientSession = null;
 
                 try
                 {
-                    m_WebSocketServer.RequestHandler.EmitLocalEvent("on-disconnect", clientSession);
+                    clientId = session.GetRemoteIp() + ":" + session.GetRemotePort();
+                    clientSession = m_WebSocketServer.FindClientSession(clientId);
                 }
                 catch { }
 
-                m_WebSocketServer.RemoveClientSession(clientSession);
+                try
+                {
+                    if (clientSession != null)
+                        m_WebSocketServer.RequestHandler.EmitLocalEvent("on-disconnect", clientSession);
+                }
+                catch { }
+
+                if (clientSession != null) m_WebSocketServer.RemoveClientSession(clientSession);
             }
 
             base.OnDisconnect(session);

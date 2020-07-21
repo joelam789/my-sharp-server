@@ -55,10 +55,16 @@ namespace MySharpServer.Framework
         {
             if (m_RemoteAddress.Length <= 0)
             {
-                if (m_Session != null)
+                var addr = "";
+                try
                 {
-                    m_RemoteAddress = m_Session.GetRemoteIp() + ":" + m_Session.GetRemotePort();
+                    if (m_Session != null)
+                    {
+                        addr = m_Session.GetRemoteIp() + ":" + m_Session.GetRemotePort();
+                    }
                 }
+                catch { }
+                if (!string.IsNullOrEmpty(addr)) m_RemoteAddress = addr;
             }
             return m_RemoteAddress;
         }

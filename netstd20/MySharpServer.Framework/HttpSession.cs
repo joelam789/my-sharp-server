@@ -51,11 +51,17 @@ namespace MySharpServer.Framework
         {
             if (m_RemoteAddress.Length <= 0)
             {
-                if (m_Session != null && m_Session.Request != null)
+                var addr = "";
+                try
                 {
-                    var remoteEndPoint = m_Session.Request.RemoteEndPoint;
-                    m_RemoteAddress = remoteEndPoint.Address.ToString() + ":" + remoteEndPoint.Port;
+                    if (m_Session != null && m_Session.Request != null)
+                    {
+                        var remoteEndPoint = m_Session.Request.RemoteEndPoint;
+                        addr = remoteEndPoint.Address.ToString() + ":" + remoteEndPoint.Port;
+                    }
                 }
+                catch { }
+                if (!string.IsNullOrEmpty(addr)) m_RemoteAddress = addr;
             }
             return m_RemoteAddress;
         }
