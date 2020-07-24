@@ -19,6 +19,7 @@ namespace MySharpServer.Common
         Task Send(string msg, IDictionary<string, string> metadata = null);
         void EndResponse();
 
+        bool IsConnected();
         void CloseConnection();
     }
 }

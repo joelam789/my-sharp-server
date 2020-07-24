@@ -20,6 +20,8 @@ namespace MySharpServer.Framework
 
         private string m_AllowOrigin = "";
 
+        private bool m_IsConnected = true;
+
         public HttpSession(HttpListenerContext session, string allowOrigin = "")
         {
             m_Session = session;
@@ -117,6 +119,11 @@ namespace MySharpServer.Framework
             }
         }
 
+        public bool IsConnected()
+        {
+            return m_IsConnected;
+        }
+
         public void CloseConnection()
         {
             if (m_Session != null)
@@ -124,6 +131,7 @@ namespace MySharpServer.Framework
                 try { m_Session.Response.Abort(); }
                 catch { }
             }
+            m_IsConnected = false;
         }
     }
 }

@@ -19,6 +19,8 @@ namespace MySharpServer.Framework
         private string m_Protocol = "";
         private string m_RemoteAddress = "";
 
+        private bool m_IsConnected = true;
+
         public WebSocketSession(Session session)
         {
             m_Session = session;
@@ -98,12 +100,25 @@ namespace MySharpServer.Framework
             // do nothing ...
         }
 
+        public bool IsConnected()
+        {
+            if (m_IsConnected)
+            {
+                if (m_Session != null)
+                {
+                    return m_Session.GetState() == 1;
+                }
+            }
+            return false;
+        }
+
         public void CloseConnection()
         {
             if (m_Session != null)
             {
                 m_Session.Close(false);
             }
+            m_IsConnected = false;
         }
     }
 }

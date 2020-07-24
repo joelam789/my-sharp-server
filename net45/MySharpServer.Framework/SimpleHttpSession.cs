@@ -21,6 +21,8 @@ namespace MySharpServer.Framework
 
         private bool m_HasSentSomething = false;
 
+        private bool m_IsConnected = true;
+
         public SimpleHttpSession(Session session)
         {
             m_Session = session;
@@ -108,12 +110,25 @@ namespace MySharpServer.Framework
             }
         }
 
+        public bool IsConnected()
+        {
+            if (m_IsConnected)
+            {
+                if (m_Session != null)
+                {
+                    return m_Session.GetState() == 1;
+                }
+            }
+            return false;
+        }
+
         public void CloseConnection()
         {
             if (m_Session != null)
             {
                 m_Session.Close(false);
             }
+            m_IsConnected = false;
         }
     }
 }

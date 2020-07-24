@@ -33,6 +33,8 @@ namespace MySharpServer.Common
         public String ClientAddress { get; set; }
 
         public String RequestPath { get; set; }
+        public String RequestService { get; set; }
+        public String RequestAction { get; set; }
 
         public IDictionary<string, string> Headers { get; set; }
 
@@ -58,6 +60,9 @@ namespace MySharpServer.Common
             ClientAddress = null;
 
             RequestPath = null;
+            RequestService = null;
+            RequestAction = null;
+
             Headers = null;
         }
 
@@ -145,6 +150,11 @@ namespace MySharpServer.Common
                         }
                     }
                 }
+            }
+            if (PathParts != null)
+            {
+                if (PathParts.Count >= 1) RequestService = PathParts[0];
+                if (PathParts.Count >= 2) RequestAction = PathParts[1];
             }
         }
 

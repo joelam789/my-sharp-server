@@ -901,10 +901,10 @@ namespace MySharpServer.Framework
 
         private async void HandlePublicRequest(RequestContext request)
         {
-            //m_Logger.Info("HandlePublicRequest() - " + request.PathParts[0] + "::" + request.PathParts[1]);
+            //m_Logger.Info("HandlePublicRequest() - " + request.RequestService + "::" + request.RequestAction);
 
-            string serviceName = request.PathParts[0];
-            string actionName = request.PathParts[1];
+            string serviceName = request.RequestService;
+            string actionName = request.RequestAction;
 
             IActionCaller caller = null;
             List<string> remoteServers = null;
@@ -944,7 +944,7 @@ namespace MySharpServer.Framework
                         {
                             result = "";
                             m_Logger.Error("Failed to call remote service! URL: " + remoteUrl + " , ServiceName: " + serviceName
-                                            + " , ActionName: " + request.PathParts[1] + " , Data: " + request.PathParts.Last() + " , Error: " + ex.Message);
+                                            + " , ActionName: " + request.RequestAction + " , Data: " + request.PathParts.Last() + " , Error: " + ex.Message);
                         }
                     }
                 }
@@ -957,9 +957,9 @@ namespace MySharpServer.Framework
 
         private async void HandleInternalRequest(RequestContext request)
         {
-            //m_Logger.Info("HandleInternalRequest() - " + request.PathParts[0] + "::" + request.PathParts[1]);
+            //m_Logger.Info("HandleInternalRequest() - " + request.RequestService + "::" + request.RequestAction);
 
-            string serviceName = request.PathParts[0];
+            string serviceName = request.RequestService;
             string accessKey = request.Key;
             if (accessKey != null && accessKey.Length > 0 && accessKey == m_AccessKey)
             {
@@ -1035,7 +1035,7 @@ namespace MySharpServer.Framework
             try
             {
                 ctx.Context.Session.BeginResponse();
-                await ctx.Service.Call(ctx.Context.PathParts[1], ctx.Context, ctx.IsPublicRequest);
+                await ctx.Service.Call(ctx.Context.RequestAction, ctx.Context, ctx.IsPublicRequest);
                 ctx.Context.Session.EndResponse();
             }
             catch (Exception ex)
