@@ -17,6 +17,10 @@ namespace MySharpServer.Framework
 
         private IServerLogger m_Logger = null;
 
+        private MethodInfo m_ValidationAction = null;
+        private MethodInfo m_TaskFactoryAction = null;
+        private MethodInfo m_DefaultAction = null;
+
         private Dictionary<string, MethodInfo> m_LocalActions = new Dictionary<string, MethodInfo>();
         private Dictionary<string, MethodInfo> m_PublicActions = new Dictionary<string, MethodInfo>();
         private Dictionary<string, MethodInfo> m_InternalActions = new Dictionary<string, MethodInfo>();
@@ -52,9 +56,36 @@ namespace MySharpServer.Framework
                 {
                     string actionName = attr.Name;
                     var actions = attr.IsLocal ? m_LocalActions : (attr.IsPublic ? m_PublicActions : m_InternalActions);
-                    if (!actions.ContainsKey(actionName)) actions.Add(actionName, method);
+                    if (!actions.ContainsKey(actionName))
+                    {
+                        actions.Add(actionName, method);
+                        if (actionName == "validate-request") m_ValidationAction = method;
+                        else if (actionName == "get-task-factory") m_TaskFactoryAction = method;
+                        else if (actionName == "default-action") m_DefaultAction = method;
+                    }
                 }
             }
+        }
+
+        protected async Task<object> ReturnAsyncResult(object input)
+        {
+            object result = input;
+            if (result != null)
+            {
+                Task<string> str = result as Task<string>;
+                if (str != null) return await str;
+                else
+                {
+                    Task<object> ret = result as Task<object>;
+                    if (ret != null) return await ret;
+                    else
+                    {
+                        Task task = result as Task;
+                        if (task != null) await task;
+                    }
+                }
+            }
+            return result;
         }
 
         public async Task<string> Load(object param)
@@ -73,15 +104,23 @@ namespace MySharpServer.Framework
 
         public async Task<string> ValidateRequest(object param)
         {
-            var result = await Call("validate-request", param, false, true, "");
-            if (result != null) return result.ToString();
+            if (m_ValidationAction != null)
+            {
+                var result = m_ValidationAction.Invoke(ServiceObject, new object[] { param });
+                result = await ReturnAsyncResult(result);
+                if (result != null) return result.ToString();
+            }
             return "";
         }
 
         public async Task<TaskFactory> GetTaskFactory(object param)
         {
-            var result = await Call("get-task-factory", param, false, true, Task.Factory);
-            if (result != null) return result as TaskFactory;
+            if (m_TaskFactoryAction != null)
+            {
+                var result = m_TaskFactoryAction.Invoke(ServiceObject, new object[] { param });
+                result = await ReturnAsyncResult(result);
+                if (result != null) return result as TaskFactory;
+            }
             return null;
         }
 
@@ -107,23 +146,17 @@ namespace MySharpServer.Framework
                     }
                 }
                 if (method != null) result = method.Invoke(ServiceObject, new object[] { param });
-                else if (defaultResult != null) result = defaultResult;
-
-                if (result != null)
+                else
                 {
-                    Task<string> str = result as Task<string>;
-                    if (str != null) return await str;
-                    else
+                    if (!includingLocal && m_DefaultAction != null)
                     {
-                        Task<object> ret = result as Task<object>;
-                        if (ret != null) return await ret;
-                        else
-                        {
-                            Task task = result as Task;
-                            if (task != null) await task;
-                        }
+                        result = m_DefaultAction.Invoke(ServiceObject, new object[] { param });
                     }
+                    else if (defaultResult != null) result = defaultResult;
                 }
+
+                result = await ReturnAsyncResult(result);
+
             }
             catch (Exception ex)
             {
