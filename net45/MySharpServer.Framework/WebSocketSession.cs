@@ -79,7 +79,7 @@ namespace MySharpServer.Framework
             return url;
         }
 
-        public async Task Send(string msg, IDictionary<string, string> metadata = null)
+        public async Task Send(string msg, IDictionary<string, string> metadata = null, int httpStatusCode = 0, string httpReasonPhrase = null)
         {
            await Task.Run(() =>
            {

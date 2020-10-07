@@ -81,14 +81,20 @@ namespace MySharpServer.Framework
             return url;
         }
 
-        public async Task Send(string msg, IDictionary<string, string> metadata = null)
+        public async Task Send(string msg, IDictionary<string, string> metadata = null, int httpStatusCode = 0, string httpReasonPhrase = null)
         {
             await Task.Run(() =>
             {
                 if (m_Session != null)
                 {
                     m_HasSentSomething = true;
-                    HttpMessage.Send(m_Session, msg, metadata);
+                    if (httpStatusCode > 0 && httpReasonPhrase != null)
+                    {
+                        var httpmsg = new HttpMessage(httpStatusCode, httpReasonPhrase, msg);
+                        if (metadata != null) httpmsg.SetHeaders(metadata);
+                        m_Session.Send(httpmsg);
+                    }
+                    else HttpMessage.Send(m_Session, msg, metadata);
                 }
             }).ConfigureAwait(false);
         }

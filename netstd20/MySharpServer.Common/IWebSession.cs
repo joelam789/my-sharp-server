@@ -16,7 +16,7 @@ namespace MySharpServer.Common
         string GetRequestPath();
 
         void BeginResponse();
-        Task Send(string msg, IDictionary<string, string> metadata = null);
+        Task Send(string msg, IDictionary<string, string> metadata = null, int httpStatusCode = 0, string httpReasonPhrase = null);
         void EndResponse();
 
         bool IsConnected();

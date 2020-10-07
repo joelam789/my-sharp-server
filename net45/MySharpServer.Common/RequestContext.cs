@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -256,6 +258,35 @@ namespace MySharpServer.Common
                 // Return the hexadecimal string.
                 return builder.ToString();
             }
+        }
+
+        public static string GetLocalFileFullPath(string filepath)
+        {
+            var output = String.IsNullOrEmpty(filepath) ? "" : filepath.Trim();
+            if (output.Length > 0)
+            {
+                output = output.Replace('\\', '/');
+                if (output[0] != '/' && output.IndexOf(":/") != 1) // if it is not abs path
+                {
+                    string folder = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
+                    if (folder == null || folder.Trim().Length <= 0)
+                    {
+                        var entry = Assembly.GetEntryAssembly();
+                        var location = "";
+                        try
+                        {
+                            if (entry != null) location = entry.Location;
+                        }
+                        catch { }
+                        if (location != null && location.Length > 0)
+                        {
+                            folder = Path.GetDirectoryName(location);
+                        }
+                    }
+                    if (folder != null && folder.Length > 0) output = folder.Replace('\\', '/') + "/" + output;
+                }
+            }
+            return output;
         }
     }
 }

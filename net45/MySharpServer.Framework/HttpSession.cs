@@ -95,13 +95,18 @@ namespace MySharpServer.Framework
             }
         }
 
-        public async Task Send(string msg, IDictionary<string, string> metadata = null)
+        public async Task Send(string msg, IDictionary<string, string> metadata = null, int httpStatusCode = 0, string httpReasonPhrase = null)
         {
             if (m_Session != null)
             {
                 if (metadata != null && metadata.Count > 0)
                 {
                     foreach (var item in metadata) m_Session.Response.AppendHeader(item.Key, item.Value);
+                }
+                if (httpStatusCode > 0 && httpReasonPhrase != null)
+                {
+                    m_Session.Response.StatusCode = httpStatusCode;
+                    m_Session.Response.StatusDescription = httpReasonPhrase;
                 }
                 byte[] buffer = Encoding.UTF8.GetBytes(msg);
                 await m_Session.Response.OutputStream.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
