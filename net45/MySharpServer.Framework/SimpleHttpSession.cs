@@ -88,13 +88,7 @@ namespace MySharpServer.Framework
                 if (m_Session != null)
                 {
                     m_HasSentSomething = true;
-                    if (httpStatusCode > 0 && httpReasonPhrase != null)
-                    {
-                        var httpmsg = new HttpMessage(httpStatusCode, httpReasonPhrase, msg);
-                        if (metadata != null) httpmsg.SetHeaders(metadata);
-                        m_Session.Send(httpmsg);
-                    }
-                    else HttpMessage.Send(m_Session, msg, metadata);   
+                    HttpMessage.Send(m_Session, msg, metadata, httpStatusCode, httpReasonPhrase);
                 }
             }).ConfigureAwait(false);
         }

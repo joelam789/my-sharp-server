@@ -3,18 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using Common.Logging;
+using NLog;
 using MySharpServer.Common;
 
 namespace MySharpServer.Framework
 {
     public class ServerLogger: IServerLogger
     {
-        protected static ILog m_Logger = null;
+        protected static Logger m_Logger = null;
 
         public ServerLogger()
         {
-            if (m_Logger == null) m_Logger = LogManager.GetLogger(typeof(ServerLogger).Name);
+            if (m_Logger == null) m_Logger = NLog.LogManager.GetCurrentClassLogger();
         }
 
         public virtual void Info(string msg)
