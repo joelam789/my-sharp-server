@@ -8,7 +8,7 @@
   <ItemGroup>
     <PackageReference Include="CacheManager.Serialization.Json" Version="1.2.0" />
     <PackageReference Include="CacheManager.StackExchange.Redis" Version="1.2.0" />
-    <PackageReference Include="MySqlConnector" Version="0.56.0" />
+    <PackageReference Include="MySqlConnector" Version="1.0.1" />
 	<PackageReference Include="NLog.Config" Version="4.7.5" />
   </ItemGroup>
 

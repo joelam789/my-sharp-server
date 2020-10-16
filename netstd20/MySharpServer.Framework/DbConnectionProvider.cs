@@ -343,7 +343,7 @@ namespace MySharpServer.Framework
             if (type == DataAccessProviderTypes.MySql)
                 return GetDbProviderFactory("MySql.Data.MySqlClient.MySqlClientFactory", "MySql.Data");
             if (type == DataAccessProviderTypes.MySqlConnector)
-                return GetDbProviderFactory("MySql.Data.MySqlClient.MySqlClientFactory", "MySqlConnector");
+                return GetDbProviderFactory("MySqlConnector.MySqlConnectorFactory", "MySqlConnector");
             if (type == DataAccessProviderTypes.PostgreSql)
                 return GetDbProviderFactory("Npgsql.NpgsqlFactory", "Npgsql");
 
