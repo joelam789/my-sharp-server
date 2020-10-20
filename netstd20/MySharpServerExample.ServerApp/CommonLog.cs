@@ -48,11 +48,11 @@ namespace MySharpServerExample.ServerApp
 
         private void TryToSendLogToConsole(string msg)
         {
-            try
-            {
-                Console.WriteLine("[" + DateTime.Now.ToString("HH:mm:ss") + "]" + msg);
-            }
-            catch { }
+            //try
+            //{
+            //    Console.WriteLine("[" + DateTime.Now.ToString("HH:mm:ss") + "]" + msg);
+            //}
+            //catch { }
         }
 
         public override void Info(string msg)
