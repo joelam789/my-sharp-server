@@ -27,6 +27,14 @@ namespace MySharpServer.Framework
         private string m_PublicUrl = "";
         private int m_PublicProtocol = PROTOCOL_NONE;
 
+        private bool m_InternalDefaultMultithreading = false;
+        private bool m_PublicDefaultMultithreading = false;
+        private string m_InternalCustomRouterName = "";
+        private string m_PublicCustomRouterName = "";
+
+        //private IActionCaller m_InternalCustomRouter = null;
+        //private IActionCaller m_PublicCustomRouter = null;
+
         private string m_AccessKey = Guid.NewGuid().ToString();
 
         private string m_ServerInfoStorage = "SharpNode";
@@ -97,6 +105,26 @@ namespace MySharpServer.Framework
             return services == null ? new Dictionary<string, List<string>>() : new Dictionary<string, List<string>>(services);
         }
 
+        public string GetDefaultMultithreading()
+        {
+            string result = "";
+            if (m_InternalDefaultMultithreading) result = "internal";
+            if (m_PublicDefaultMultithreading)
+            {
+                if (result.Length <= 0) result = "public";
+                else result += ",public";
+            }
+            return result.Length > 0 ? result : "none";
+        }
+        public string GetCustomRouterNames()
+        {
+            string result1 = "[ - ]";
+            string result2 = "[ - ]";
+            if (!string.IsNullOrEmpty(m_InternalCustomRouterName)) result1 = "[" + m_InternalCustomRouterName + "]";
+            if (!string.IsNullOrEmpty(m_PublicCustomRouterName)) result2 = "[" + m_PublicCustomRouterName + "]";
+            return result1 + " | " + result2;
+        }
+
         public bool IsStarting()
         {
             return m_IsStarting;
@@ -118,6 +146,9 @@ namespace MySharpServer.Framework
 
             try
             {
+                m_InternalDefaultMultithreading = internalServerSetting.IsDefaultMultithreading;
+                m_InternalCustomRouterName = internalServerSetting.CustomRouterService;
+
                 if (internalServerSetting.Expiration > 0) m_RemoteInfoExpiryTime = internalServerSetting.Expiration;
 
                 string internalProtocol = internalServerSetting.WorkProtocol.ToLower();
@@ -141,6 +172,9 @@ namespace MySharpServer.Framework
 
                 if (publicServerSetting != null && publicServerSetting.WorkPort > 0)
                 {
+                    m_PublicDefaultMultithreading = publicServerSetting.IsDefaultMultithreading;
+                    m_PublicCustomRouterName = publicServerSetting.CustomRouterService;
+
                     if (publicServerSetting.WorkProtocol.ToLower().Contains("http"))
                     {
                         var flags = RequestContext.FLAG_PUBLIC;
@@ -204,6 +238,14 @@ namespace MySharpServer.Framework
                 }
 
                 await Task.Delay(100);
+
+                if (m_InternalServer != null && internalServerSetting != null)
+                {
+                    if (isInternalServerOK)
+                    {
+                        // ...
+                    }
+                }
 
                 if (m_PublicServer != null && publicServerSetting != null)
                 {
@@ -279,6 +321,9 @@ namespace MySharpServer.Framework
 
                 if (publicServerSetting != null && publicServerSetting.WorkPort > 0)
                 {
+                    m_PublicDefaultMultithreading = publicServerSetting.IsDefaultMultithreading;
+                    m_PublicCustomRouterName = publicServerSetting.CustomRouterService;
+
                     if (publicServerSetting.WorkProtocol.ToLower().Contains("http"))
                     {
                         var flags = RequestContext.FLAG_PUBLIC;
@@ -405,7 +450,6 @@ namespace MySharpServer.Framework
                         }
                     }
                 }
-
                 m_AllCreatedServices.Clear();
 
                 ResetLocalServiceFiles();
@@ -906,6 +950,37 @@ namespace MySharpServer.Framework
             string serviceName = request.RequestService;
             string actionName = request.RequestAction;
 
+            if (!String.IsNullOrEmpty(m_PublicCustomRouterName))
+            {
+                ServiceCollection allsvc = m_LocalServices;
+                if (allsvc != null)
+                {
+                    IActionCaller svc = null;
+                    allsvc.PublicServices.TryGetValue(m_PublicCustomRouterName, out svc);
+                    if (svc == null) allsvc.InternalServices.TryGetValue(m_PublicCustomRouterName, out svc);
+                    if (svc != null)
+                    {
+                        var rsl = await svc.Call("get-service", request, false);
+                        if (rsl != null)
+                        {
+                            var newServiceAction = rsl.ToString().Split('|'); // service name | action name
+                            var newServiceName = newServiceAction.Length > 0 ? newServiceAction[0].Trim() : "";
+                            var newActionName = newServiceAction.Length > 1 ? newServiceAction[1].Trim() : "";
+                            if (!string.IsNullOrEmpty(newServiceName))
+                            {
+                                request.TargetService = newServiceName;
+                                serviceName = newServiceName;
+                            }
+                            if (!string.IsNullOrEmpty(newActionName))
+                            {
+                                request.TargetAction = newActionName;
+                                actionName = newActionName;
+                            }
+                        }
+                    }
+                }
+            }
+
             IActionCaller caller = null;
             List<string> remoteServers = null;
             if (request.LocalServices != null && request.LocalServices.PublicServices.TryGetValue(serviceName, out caller))
@@ -915,6 +990,7 @@ namespace MySharpServer.Framework
                 if (errormsg == null || errormsg.Length <= 0)
                 {
                     var tasks = await svc.GetTaskFactory(request);
+                    if (tasks == null && m_PublicDefaultMultithreading) tasks = Task.Factory;
                     if (tasks != null) await tasks.StartNew((param) => ProcessData(param), new ServiceRequestContext(svc, request, true)).ConfigureAwait(false);
                     else ProcessData(new ServiceRequestContext(svc, request, true)); // process it in listener's thread
                 }
@@ -960,6 +1036,38 @@ namespace MySharpServer.Framework
             //m_Logger.Info("HandleInternalRequest() - " + request.RequestService + "::" + request.RequestAction);
 
             string serviceName = request.RequestService;
+
+            if (!String.IsNullOrEmpty(m_InternalCustomRouterName))
+            {
+                ServiceCollection allsvc = m_LocalServices;
+                if (allsvc != null)
+                {
+                    IActionCaller svc = null;
+                    allsvc.PublicServices.TryGetValue(m_InternalCustomRouterName, out svc);
+                    if (svc == null) allsvc.InternalServices.TryGetValue(m_InternalCustomRouterName, out svc);
+                    if (svc != null)
+                    {
+                        var rsl = await svc.Call("get-service", request, false);
+                        if (rsl != null)
+                        {
+                            var newServiceAction = rsl.ToString().Split('|'); // service name | action name
+                            var newServiceName = newServiceAction.Length > 0 ? newServiceAction[0].Trim() : "";
+                            var newActionName = newServiceAction.Length > 1 ? newServiceAction[1].Trim() : "";
+                            if (!string.IsNullOrEmpty(newServiceName))
+                            {
+                                request.TargetService = newServiceName;
+                                serviceName = newServiceName;
+                            }
+                            if (!string.IsNullOrEmpty(newActionName))
+                            {
+                                request.TargetAction = newActionName;
+                                //actionName = newActionName;
+                            }
+                        }
+                    }
+                }
+            }
+
             string accessKey = request.Key;
             if (accessKey != null && accessKey.Length > 0 && accessKey == m_AccessKey)
             {
@@ -983,6 +1091,7 @@ namespace MySharpServer.Framework
                     if (errormsg == null || errormsg.Length <= 0)
                     {
                         var tasks = await svc.GetTaskFactory(request);
+                        if (tasks == null && m_InternalDefaultMultithreading) tasks = Task.Factory;
                         if (tasks != null) await tasks.StartNew((param) => ProcessData(param), new ServiceRequestContext(svc, request, false)).ConfigureAwait(false);
                         else ProcessData(new ServiceRequestContext(svc, request, false)); // process it in listener's thread
                     }
@@ -1013,6 +1122,7 @@ namespace MySharpServer.Framework
                     if (errormsg == null || errormsg.Length <= 0)
                     {
                         var tasks = await svc.GetTaskFactory(request);
+                        if (tasks == null && m_InternalDefaultMultithreading) tasks = Task.Factory;
                         if (tasks != null) await tasks.StartNew((param) => ProcessData(param), new ServiceRequestContext(svc, request, true)).ConfigureAwait(false);
                         else ProcessData(new ServiceRequestContext(svc, request, true)); // process it in listener's thread
                     }
@@ -1035,7 +1145,8 @@ namespace MySharpServer.Framework
             try
             {
                 ctx.Context.Session.BeginResponse();
-                await ctx.Service.Call(ctx.Context.RequestAction, ctx.Context, ctx.IsPublicRequest);
+                await ctx.Service.Call(string.IsNullOrEmpty(ctx.Context.TargetAction) ? ctx.Context.RequestAction : ctx.Context.TargetAction,
+                                        ctx.Context, ctx.IsPublicRequest);
                 ctx.Context.Session.EndResponse();
             }
             catch (Exception ex)
@@ -1120,6 +1231,8 @@ namespace MySharpServer.Framework
                     if (svrLogger != null)
                     {
                         svrLogger.Info("Server Started - " + NodeName);
+                        svrLogger.Info("Custom Routers: " + Node.GetCustomRouterNames());
+                        svrLogger.Info("Default Multithreading: " + Node.GetDefaultMultithreading());
                         if (Node.IsStandalone()) svrLogger.Info("Server is in standalone mode");
                         else svrLogger.Info("Internal URL: " + Node.GetInternalAccessUrl());
                         svrLogger.Info("Public URL: " + Node.GetPublicAccessUrl());

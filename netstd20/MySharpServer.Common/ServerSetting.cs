@@ -21,6 +21,10 @@ namespace MySharpServer.Common
 
         public bool AllowParentPath { get; set; }
 
+        public bool IsDefaultMultithreading { get; set; }
+
+        public string CustomRouterService { get; set; }
+
         public string CertFile { get; set; }
 
         public string CertKey { get; set; }
@@ -38,6 +42,10 @@ namespace MySharpServer.Common
             AllowOrigin = "";
 
             AllowParentPath = false;
+
+            IsDefaultMultithreading = false;
+
+            CustomRouterService = "";
 
             CertFile = "";
             CertKey = "";

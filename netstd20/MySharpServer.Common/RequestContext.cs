@@ -35,6 +35,9 @@ namespace MySharpServer.Common
         public String RequestService { get; set; }
         public String RequestAction { get; set; }
 
+        public String TargetService { get; set; }
+        public String TargetAction { get; set; }
+
         public IDictionary<string, string> Headers { get; set; }
 
         public RequestContext()
@@ -61,6 +64,9 @@ namespace MySharpServer.Common
             RequestPath = null;
             RequestService = null;
             RequestAction = null;
+
+            TargetService = null;
+            TargetAction = null;
 
             Headers = null;
         }
